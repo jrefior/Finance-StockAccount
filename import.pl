@@ -15,11 +15,21 @@ my @headers = split("\t", $hline);
 pop(@headers);
 <$fh>;
 
-while my ($line = <$fh>) {
+while (my $line = <$fh>) {
     chomp($line);
     my @row = split("\t", $line);
     pop(@row);
 
+
+    my $row = {};
+    for (my $x=0; $x<scalar(@headers); $x++) {
+        if (exists($row[$x])) {
+            $row->{$headers[$x]} = $row[$x];
+        }
+    }
+
+    print $row->{'Symbol/Desc'}, "\n";
+}
 
 
 
