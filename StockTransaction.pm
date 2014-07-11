@@ -5,9 +5,12 @@ use Exporter 'import';
 use strict;
 use warnings;
 
-my $datePattern = '^\s*([0-9]{2}\/[0-9]{2}\/[0-9]{4})\s*$';
-my $pricePattern = '^\s*\$((?:[0-9]{1,3},)*[0-9]+(?:\.[0-9]{1,2})*)\s*$';
-my $commifyPattern = '^\$(-?\[0-9]+)([0-9]{3})';
+use constant BUY  => 1;
+use constant SELL => 0;
+my $datePattern    = '^\s*([0-9]{2}\/[0-9]{2}\/[0-9]{4})\s*$';
+my $pricePattern   = '^\s*\$((?:[0-9]{1,3},)*[0-9]+(?:\.[0-9]{1,2})*)\s*$';
+my $commifyPattern = '^(-?\$[0-9]+)([0-9]{3})';
+my $symbolPattern  = '^\s*(\w+)\s*';
 
 sub new {
     my ($class, $init) = @_;
@@ -47,6 +50,17 @@ sub extractPrice {
     }
 }
 
+sub extractSymbol {
+    my ($self, $symbolString) = @_;
+    if ($symbolString =~ /$symbolPattern/) {
+        $self->{symbol} = $1;
+    }
+    else {
+        warn "Failed to recognize symbol pattern in string $symbolString.\n";
+        return 0;
+    }
+}
+
 sub set {
     my ($self, $init) = @_;
     for my $key (keys %$init) {
@@ -57,6 +71,9 @@ sub set {
             }
             elsif ($key eq 'price') {
                 $self->extractPrice($value) or return 0;
+            }
+            elsif ($key eq 'symbol') {
+                $self->extractSymbol($value) or return 0;
             }
             else {
                 $self->{$key} = $init->{$key};
@@ -71,7 +88,7 @@ sub set {
 
 sub formatDollars {
     my ($self, $num) = @_;
-    my $dollars = sprintf("$%.2f", $num);
+    my $dollars = sprintf("\$%.2f", $num);
     1 while $dollars =~ s/$commifyPattern/$1,$2/;
     return $dollars;
 }
