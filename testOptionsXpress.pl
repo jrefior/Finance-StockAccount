@@ -15,6 +15,7 @@ ok($ox, 'Created new OX object with file.');
 
 my $st = $ox->nextSt();
 ok($st, 'Read first transaction line into a StockTransaction object.');
+is($st->{symbol}, 'AAPL', 'Symbol matches.');
 
 
 
