@@ -14,5 +14,14 @@ while (my $st = $ox->nextSt()) {
 }
 
 $ts->sortSt();
+my $symbol = 'AAPL';
+$ts->printSymbolTransactions($symbol);
+my $st = $ts->lastSaleNotCounted($symbol);
+if ($st) {
+    print '-'x80, "\n";
+    $st->printTransaction();
+}
+
+$ts->accountLastSale($symbol);
 
 

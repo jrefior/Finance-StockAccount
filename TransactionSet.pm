@@ -69,4 +69,61 @@ sub sortSt {
     return 1;
 }
 
+sub printSymbolTransactions {
+    my ($self, $symbol) = @_;
+    my $transactions = $self->{stBySymbol}{$symbol};
+    print $symbol, "\n";
+    foreach my $st (@$transactions) {
+        $st->printTransaction();
+    }
+}
+
+sub lastSaleNotCounted {
+    my ($self, $symbol) = @_;
+    my $transactions = $self->{stBySymbol}{$symbol};
+    foreach my $st (@$transactions) {
+        if ($st->isSale()) {
+            if ($st->{accounted} < $st->{quantity}) {
+                return $st;
+            }
+        }
+    }
+    return 0; # none found
+}
+
+sub accountLastSale {
+    my ($self, $symbol) = @_;
+    my $transactions = $self->{stBySymbol}{$symbol};
+    my $sale;
+    my $index = 0;
+    for (my $x=0; $x<scalar(@$transactions); $x++) {
+        my $st = $transactions->[$x];
+        if ($st->isSale()) {
+            if ($st->{accounted} < $st->{quantity}) {
+                $sale = $st;
+                $index = $x;
+                last;
+            }
+        }
+    }
+    for (my $y=0; $y<$index; $y++) {
+        my $st = $transactions->[$y];
+        if (!$st->isSale()) {
+            if ($st->{accounted} < $st->{quantity}) {
+                my $sharesAvailable = $st->{quantity} - $st->{accounted};
+                my $sharesSold = $sale->{quantity};
+                if ($sharesAvailable == $sharesSold) {
+                    $sale->{accounted} = $sharesSold;
+                    $st->{accounted} = $sharesSold;
+                    last;
+                }
+            }
+        }
+    }
+
+}
+
+
+
+
 1;

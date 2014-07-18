@@ -21,6 +21,7 @@ sub new {
         quantity    => undef, 
         price       => undef, 
         commission  => undef,
+        accounted   => 0,
     };
     bless($self, $class);
     $init and $self->set($init);
@@ -41,6 +42,11 @@ sub extractDate {
 sub dateMDY {
     my $self = shift;
     return split('/', $self->{date});
+}
+
+sub isSale {
+    my $self = shift;
+    return $self->{action} eq 'Sell';
 }
 
 sub extractPrice {
@@ -113,6 +119,12 @@ sub formatDollars {
     my $dollars = sprintf("\$%.2f", $num);
     1 while $dollars =~ s/$commifyPattern/$1,$2/;
     return $dollars;
+}
+
+sub printTransaction {
+    my $self = shift;
+    printf("%6s %10s %-4s %6d %7s\n", $self->{symbol}, $self->{date}, $self->{action}, $self->{quantity}, $self->formatDollars($self->{price}));
+    return 1;
 }
 
 1;
