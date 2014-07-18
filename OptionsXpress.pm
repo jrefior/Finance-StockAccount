@@ -8,7 +8,7 @@ use StockTransaction;
 #### Expected Fields, tab separated:
 # Trade Date	Indicator	Action	Symbol/Desc	Qty	Price	Commission	Net Amount	Gain Loss	
 # 0             1           2       3           4   5       6           7           8
-my @pattern = qw(date 0 action 2 symbol 3 quantity 4 price 5);
+my @pattern = qw(date 0 action 2 symbol 3 quantity 4 price 5 commission 6);
 
 sub new {
     my ($class, $file) = @_;
@@ -33,7 +33,7 @@ sub init {
     chomp($hline);
     my @headers = split("\t", $hline);
     pop(@headers);
-    scalar(@headers) >= 6 or die "Unexpected number of headers. Header line:\n$hline\n";
+    scalar(@headers) >= scalar(@pattern)/2 or die "Unexpected number of headers. Header line:\n$hline\n";
     $self->{headers} = \@headers;
     <$fh>;
     return 1;

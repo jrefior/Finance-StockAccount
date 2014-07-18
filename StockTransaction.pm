@@ -8,7 +8,7 @@ use warnings;
 use constant BUY  => 1;
 use constant SELL => 0;
 my $datePattern    = '^\s*([0-9]{2}\/[0-9]{2}\/[0-9]{4})\s*$';
-my $pricePattern   = '^\s*\$((?:[0-9]{1,3},)*[0-9]+(?:\.[0-9]{1,2})*)\s*$';
+my $pricePattern   = '^\s*\$((?:[0-9]{1,3},)*[0-9]+(?:\.[0-9]+)?)\s*$';
 my $commifyPattern = '^(-?\$[0-9]+)([0-9]{3})';
 my $symbolPattern  = '^\s*(\w+)\s*';
 
@@ -20,6 +20,7 @@ sub new {
         symbol      => undef, 
         quantity    => undef, 
         price       => undef, 
+        commission  => undef,
     };
     bless($self, $class);
     $init and $self->set($init);
@@ -37,6 +38,11 @@ sub extractDate {
     }
 }
 
+sub dateMDY {
+    my $self = shift;
+    return split('/', $self->{date});
+}
+
 sub extractPrice {
     my ($self, $priceString) = @_;
     if ($priceString =~ /$pricePattern/) {
@@ -46,6 +52,19 @@ sub extractPrice {
     }
     else {
         warn "Failed to recognize price pattern in string $priceString.\n";
+        return 0;
+    }
+}
+
+sub extractCommission {
+    my ($self, $commissionString) = @_;
+    if ($commissionString =~ /$pricePattern/) {
+        my $commission = $1;
+        $commission =~ s/,//g;
+        $self->{commission} = $commission;
+    }
+    else {
+        warn "Failed to recognize commission pattern in string $commissionString.\n";
         return 0;
     }
 }
@@ -71,6 +90,9 @@ sub set {
             }
             elsif ($key eq 'price') {
                 $self->extractPrice($value) or return 0;
+            }
+            elsif ($key eq 'commission') {
+                $self->extractCommission($value) or return 0;
             }
             elsif ($key eq 'symbol') {
                 $self->extractSymbol($value) or return 0;
