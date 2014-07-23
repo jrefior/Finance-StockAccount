@@ -54,6 +54,34 @@ sub possiblePurchase {
     return $self->{action} eq 'Buy' and $self->{quantity} > $self->{accounted};
 }
 
+sub sharesAvailable {
+    my $self = shift;
+    my $available = $self->{quantity} - $self->{accounted};
+    return ($available > 0 ? $available : 0);
+}
+
+sub accountShares {
+    my ($self, $shares) = @_;
+    unless ($shares and $shares > 0) {
+        warn "AccountShares of $shares bad input.\n";
+        return 0;
+    }
+    my $available = $self->available();
+    if (0 == $available) {
+        warn "Requested accountShares but no shares available.\n";
+        return 0;
+    }
+    elsif ($shares > $available) {
+        warn "Cannot account for all shares.\nRequested shares: $shares, Available to account: $available.\n";
+        $self->{accounted} = $self->{quantity};
+        return $available;
+    }
+    else {
+        $self->{accounted} += $shares;
+        return $shares;
+    }
+}
+
 sub extractPrice {
     my ($self, $priceString) = @_;
     if ($priceString =~ /$pricePattern/) {

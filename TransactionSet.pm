@@ -10,8 +10,8 @@ use StockTransaction;
 sub new {
     my ($class, $init) = @_;
     my $self = {
-        stBySymbol      => undef, # hash of arrays, e.g. {'AAPL' => [$st1, $st2, ...], ...}
-        sorted          => 0,
+        stBySymbol          => undef, # hash of arrays, e.g. {'AAPL' => [$st1, $st2, ...], ...}
+        accountSets         => undef,
     };
     bless($self, $class);
     $init and $self->add($init);
@@ -26,7 +26,6 @@ sub add {
        'StockTransaction' eq ref($st) or die "Not a valid st object.\n";
        push(@{$self->{stBySymbol}{$st->{symbol}}}, $st);
     }
-    $self->{sorted} = 0;
 }
 
 sub cmpStDate {
@@ -101,14 +100,25 @@ sub lastSaleNotCounted {
 }
 
 sub accountPriorPurchase {
-    my ($self, $index) = @_;
+    my ($self, $symbol, $index) = @_;
     my $transactions = $self->{stBySymbol}{$symbol};
-    my $sale = $transactions->[$index];
     my @priorPurchases = sort { $self->cmpStPrice($a, $b) } grep { $_->possiblePurchase() } @{$transactions}[0 .. $index];
+    my $sale = $transactions->[$index];
+    my $set = {sale => $sale, purchases => []};
+    foreach my $priorPurchase (@priorPurchases) {
+        my $sharesSold = $sale->available();
+        last unless $sharesSold;
+        my $accounted = $priorPurchase->accountShares($sharesSold);
+        if ($accounted) {
+            push(@{$set->{purchases}}, $priorPurchase);
+            $sale->accountShares($accounted);
+        }
+    }
+    push(@{$self->{accountSets}{$symbol}}, $set);
+    return 1;
+}
 
-
-
-sub accountLastSale {
+sub accountSales {
     my ($self, $symbol) = @_;
     my $transactions = $self->{stBySymbol}{$symbol};
     my $sale;
@@ -116,28 +126,11 @@ sub accountLastSale {
     for (my $x=0; $x<scalar(@$transactions); $x++) {
         my $st = $transactions->[$x];
         if ($st->isSale()) {
-            if ($st->{accounted} < $st->{quantity}) {
-                $sale = $st;
-                $index = $x;
-                last;
+            if ($st->available()) {
+                $self->accountPriorPurchase($symbol, $x);
             }
         }
     }
-    for (my $y=0; $y<$index; $y++) {
-        my $st = $transactions->[$y];
-        if (!$st->isSale()) {
-            if ($st->{accounted} < $st->{quantity}) {
-                my $sharesAvailable = $st->{quantity} - $st->{accounted};
-                my $sharesSold = $sale->{quantity};
-                if ($sharesAvailable == $sharesSold) {
-                    $sale->{accounted} = $sharesSold;
-                    $st->{accounted} = $sharesSold;
-                    last;
-                }
-            }
-        }
-    }
-
 }
 
 
