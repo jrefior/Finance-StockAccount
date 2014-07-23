@@ -49,6 +49,11 @@ sub isSale {
     return $self->{action} eq 'Sell';
 }
 
+sub possiblePurchase {
+    my $self = shift;
+    return $self->{action} eq 'Buy' and $self->{quantity} > $self->{accounted};
+}
+
 sub extractPrice {
     my ($self, $priceString) = @_;
     if ($priceString =~ /$pricePattern/) {

@@ -60,6 +60,15 @@ sub cmpStDate {
     }
 }
 
+cmpStPrice {
+    my ($self, $st1, $st2) = @_;
+    my $p1 = $st1->{price};
+    my $p2 = $st2->{price};
+    return $p1  > $p2 ? 1 :
+           $p1 == $p2 ? 0 :
+           -1;
+}
+
 sub sortSt {
     my $self = shift;
     foreach my $symbol (keys %{$self->{stBySymbol}}) {
@@ -90,6 +99,14 @@ sub lastSaleNotCounted {
     }
     return 0; # none found
 }
+
+sub accountPriorPurchase {
+    my ($self, $index) = @_;
+    my $transactions = $self->{stBySymbol}{$symbol};
+    my $sale = $transactions->[$index];
+    my @priorPurchases = sort { $self->cmpStPrice($a, $b) } grep { $_->possiblePurchase() } @{$transactions}[0 .. $index];
+
+
 
 sub accountLastSale {
     my ($self, $symbol) = @_;
