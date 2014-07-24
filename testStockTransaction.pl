@@ -26,6 +26,23 @@ use_ok('StockTransaction');
     ok($st->set({symbol => $ss}), 'Set a symbol');
     is($st->{symbol}, 'AAPL', 'Symbol extracted as expected.');
 
+    my $quant = 500;
+    ok($st->set({quantity => $quant}), 'Set a quantity.');
+    is($st->{quantity}, 500, 'Quantity expected.');
+
+    my $action = 'Buy';
+    ok($st->set({action => $action}), 'Set an action.');
+    is($st->{action}, $action, 'Retrieve the action.');
+
+    is($st->available(), 500, 'Available expected 500.');
+    is($st->accountShares(100), 100, 'Account shares expected 100.');
+    is($st->possiblePurchase(), 1, 'Possible purchase.');
+    is($st->available(), 400, 'Available expected after accounting shares.');
+    is($st->accountShares(600), 400, 'Accounted for expected number when request was too high.');
+    is($st->available(), 0, 'Available zero after accounting for all shares.');
+    is($st->possiblePurchase(), 0, 'Not a possible purchase.');
+
+
 }
 
     

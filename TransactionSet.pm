@@ -59,7 +59,7 @@ sub cmpStDate {
     }
 }
 
-cmpStPrice {
+sub cmpStPrice {
     my ($self, $st1, $st2) = @_;
     my $p1 = $st1->{price};
     my $p2 = $st2->{price};

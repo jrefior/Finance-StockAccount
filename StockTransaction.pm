@@ -51,10 +51,10 @@ sub isSale {
 
 sub possiblePurchase {
     my $self = shift;
-    return $self->{action} eq 'Buy' and $self->{quantity} > $self->{accounted};
+    return (($self->{action} eq 'Buy') && ($self->{quantity} > $self->{accounted})) ? 1 : 0;
 }
 
-sub sharesAvailable {
+sub available {
     my $self = shift;
     my $available = $self->{quantity} - $self->{accounted};
     return ($available > 0 ? $available : 0);
@@ -72,7 +72,6 @@ sub accountShares {
         return 0;
     }
     elsif ($shares > $available) {
-        warn "Cannot account for all shares.\nRequested shares: $shares, Available to account: $available.\n";
         $self->{accounted} = $self->{quantity};
         return $available;
     }
