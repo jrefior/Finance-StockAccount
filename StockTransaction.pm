@@ -159,4 +159,9 @@ sub printTransaction {
     return 1;
 }
 
+sub accountedValue {
+    my $self = shift;
+    return $self->{accounted} * $self->{price} + $self->{commission};
+}
+
 1;

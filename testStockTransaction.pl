@@ -34,10 +34,13 @@ use_ok('StockTransaction');
     ok($st->set({action => $action}), 'Set an action.');
     is($st->{action}, $action, 'Retrieve the action.');
 
+    ok($st->set({commission => '$8.95'}), 'Set commission value.');
+
     is($st->available(), 500, 'Available expected 500.');
     is($st->accountShares(100), 100, 'Account shares expected 100.');
     is($st->possiblePurchase(), 1, 'Possible purchase.');
     is($st->available(), 400, 'Available expected after accounting shares.');
+    is($st->accountedValue(), 432109.95, 'Accounted value expected.');
     is($st->accountShares(600), 400, 'Accounted for expected number when request was too high.');
     is($st->available(), 0, 'Available zero after accounting for all shares.');
     is($st->possiblePurchase(), 0, 'Not a possible purchase.');

@@ -12,6 +12,7 @@ sub new {
     my $self = {
         stBySymbol          => undef, # hash of arrays, e.g. {'AAPL' => [$st1, $st2, ...], ...}
         accountSets         => undef,
+        stats               => undef,
     };
     bless($self, $class);
     $init and $self->add($init);
@@ -86,19 +87,6 @@ sub printSymbolTransactions {
     }
 }
 
-sub lastSaleNotCounted {
-    my ($self, $symbol) = @_;
-    my $transactions = $self->{stBySymbol}{$symbol};
-    foreach my $st (@$transactions) {
-        if ($st->isSale()) {
-            if ($st->{accounted} < $st->{quantity}) {
-                return $st;
-            }
-        }
-    }
-    return 0; # none found
-}
-
 sub accountPriorPurchase {
     my ($self, $symbol, $index) = @_;
     my $transactions = $self->{stBySymbol}{$symbol};
@@ -133,6 +121,11 @@ sub accountSales {
     }
 }
 
+sub populateStats {
+    my ($self, $symbol) = @_;
+    my $sets = $self->{accountSets}{$symbol};
+    foreach my $set (@$sets) {
+        my $sale = $set->{sale};
 
 
 
