@@ -10,11 +10,10 @@ my $ox = OptionsXpress->new($file);
 my $ts = TransactionSet->new();
 
 while (my $st = $ox->nextSt()) {
+    next if $st->{symbol} =~ /^(?:aet|aep|ab|ea|bac)$/i;
     $ts->add([$st]);
 }
 
 $ts->sortSt();
-my $symbol = 'AAPL';
-$ts->printSymbolTransactions($symbol);
-
-$ts->accountSales($symbol);
+$ts->accountAllSales();
+$ts->printTransactionSets();

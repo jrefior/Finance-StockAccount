@@ -9,7 +9,7 @@ use constant BUY  => 1;
 use constant SELL => 0;
 my $datePattern    = '^\s*([0-9]{2}\/[0-9]{2}\/[0-9]{4})\s*$';
 my $pricePattern   = '^\s*\$((?:[0-9]{1,3},)*[0-9]+(?:\.[0-9]+)?)\s*$';
-my $commifyPattern = '^(-?\$[0-9]+)([0-9]{3})';
+my $commifyPattern = '^(-?\$-?[0-9]+)([0-9]{3})';
 my $symbolPattern  = '^\s*(\w+)\s*';
 
 sub new {
@@ -161,7 +161,14 @@ sub printTransaction {
 
 sub accountedValue {
     my $self = shift;
-    return $self->{accounted} * $self->{price} + $self->{commission};
+    my $value = $self->{accounted} * $self->{price};
+    if ($self->isSale()) {
+        $value -= $self->{commission};
+    }
+    else {
+        $value += $self->{commission};
+    }
+    return $value;
 }
 
 1;
