@@ -1,0 +1,14 @@
+
+Terminology
+
+Trade : An executed buy or sell order for a stock.
+*Transaction : Same as a trade.
+Account : A personal stock trading account.
+Disposition : Sale of a stock.
+Divestment : Sale of a stock.
+*TransactionSet : A sell trade of a stock matched with the purchase trades which acquired
+    the stock that was sold. Since stocks are basically fungible, some formula must be
+    chosen to select which purchases are tied to a given sale.
+*SymbolSet : The set of TransactionSets for a given stock symbol.
+
+The asterisk(*) denotes an object.
