@@ -5,11 +5,11 @@ use warnings;
 
 use Test::More;
 
-use_ok('StockTransaction');
+use_ok('StockAccount::Transaction');
 
 {
     my $date = '05/27/2012';
-    my $st = StockTransaction->new({date => $date});
+    my $st = StockAccount::Transaction->new({date => $date});
     is($st->{date}, $date, 'Date equivalency.');
     my ($m, $d, $y) = $st->dateMDY();
     ok($m == 5, 'Month matches.');

@@ -1,4 +1,4 @@
-package StockTransaction;
+package StockAccount::Transaction;
 use Exporter 'import';
 @EXPORT_OK = qw(new);
 
