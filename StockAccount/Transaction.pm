@@ -15,13 +15,15 @@ my $symbolPattern  = '^\s*(\w+)\s*';
 sub new {
     my ($class, $init) = @_;
     my $self = {
-        date        => undef, 
-        action      => undef, 
-        symbol      => undef, 
-        quantity    => undef, 
-        price       => undef, 
-        commission  => undef,
-        accounted   => 0,
+        date                => undef,
+        action              => undef,
+        symbol              => undef,
+        quantity            => undef,
+        price               => undef,
+        commission          => undef,
+        regulatoryFees      => undef,
+        importedCost        => undef,
+        accounted           => 0,
     };
     bless($self, $class);
     $init and $self->set($init);
