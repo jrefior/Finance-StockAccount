@@ -5,6 +5,17 @@ use Exporter 'import';
 use strict;
 use warnings;
 
+use Number::Format;
+
+# Configuration
+my $nf;
+if (!$ENV{ST_NO_CONFIG}) {
+    my $currencySymbol = $ENV{ST_CURRENCY_SYMBOL} || '$';
+    $nf = Number::Format->new({
+        INT_CURR_SYMBOL     => $currencySymbol,
+    });
+}
+
 use constant BUY  => 1;
 use constant SELL => 0;
 my $datePattern    = '^\s*([0-9]{2}\/[0-9]{2}\/[0-9]{4})\s*$';
@@ -15,6 +26,8 @@ my $symbolPattern  = '^\s*(\w+)\s*';
 sub new {
     my ($class, $init) = @_;
     my $self = {
+
+        # 'public' properties
         date                => undef,
         action              => undef,
         symbol              => undef,
@@ -23,27 +36,74 @@ sub new {
         commission          => undef,
         regulatoryFees      => undef,
         importedCost        => undef,
-        accounted           => 0,
+
+        # 'private' properties
     };
     bless($self, $class);
     $init and $self->set($init);
     return $self;
 }
 
-sub extractDate {
-    my ($self, $dateString) = @_;
-    if ($dateString =~ /$datePattern/) {
-        $self->{date} = $1;
+sub date {
+    my ($self, $dt) = @_;
+    if ($dt) {
+        $self->{date} = $dt;
+        return 1;
     }
     else {
-        warn "Failed to recognize date pattern in string $dateString.\n";
-        return 0;
+        return $self->{date};
     }
 }
 
-sub dateMDY {
-    my $self = shift;
-    return split('/', $self->{date});
+sub action {
+    my ($self, $action) = @_;
+    if ($action) {
+        $self->{action} = $action;
+        return 1;
+    }
+    else {
+        return $self->{action};
+    }
+}
+
+sub set {
+    my ($self, $init) = @_;
+    for my $key (keys %$init) {
+        if (exists($self->{$key})) {
+            my $value = $init->{$key};
+            if ($key eq 'date') {
+                $self->extractDate($value) or return 0;
+            }
+            elsif ($key eq 'price') {
+                $self->extractPrice($value) or return 0;
+            }
+            elsif ($key eq 'commission') {
+                $self->extractCommission($value) or return 0;
+            }
+            elsif ($key eq 'symbol') {
+                $self->extractSymbol($value) or return 0;
+            }
+            else {
+                $self->{$key} = $init->{$key};
+            }
+            return 1;
+        }
+        else {
+            warn "Tried to set $key in StockAccount::Transaction object, but that's not a known key.\n";
+            return 0;
+        }
+    }
+}
+
+sub get {
+    my ($self, $key) = @_;
+    if ($key and exists($self->{$key})) {
+        return $self->{$key};
+    }
+    else {
+        warn "Tried to get key from StockAccount::Transaction object, but that's not a known key.\n";
+        return 0;
+    }
 }
 
 sub isSale {
@@ -54,33 +114,6 @@ sub isSale {
 sub possiblePurchase {
     my $self = shift;
     return (($self->{action} eq 'Buy') && ($self->{quantity} > $self->{accounted})) ? 1 : 0;
-}
-
-sub available {
-    my $self = shift;
-    my $available = $self->{quantity} - $self->{accounted};
-    return ($available > 0 ? $available : 0);
-}
-
-sub accountShares {
-    my ($self, $shares) = @_;
-    unless ($shares and $shares > 0) {
-        warn "AccountShares of $shares bad input.\n";
-        return 0;
-    }
-    my $available = $self->available();
-    if (0 == $available) {
-        warn "Requested accountShares but no shares available.\n";
-        return 0;
-    }
-    elsif ($shares > $available) {
-        $self->{accounted} = $self->{quantity};
-        return $available;
-    }
-    else {
-        $self->{accounted} += $shares;
-        return $shares;
-    }
 }
 
 sub extractPrice {
@@ -120,34 +153,6 @@ sub extractSymbol {
     }
 }
 
-sub set {
-    my ($self, $init) = @_;
-    for my $key (keys %$init) {
-        if (exists($self->{$key})) {
-            my $value = $init->{$key};
-            if ($key eq 'date') {
-                $self->extractDate($value) or return 0;
-            }
-            elsif ($key eq 'price') {
-                $self->extractPrice($value) or return 0;
-            }
-            elsif ($key eq 'commission') {
-                $self->extractCommission($value) or return 0;
-            }
-            elsif ($key eq 'symbol') {
-                $self->extractSymbol($value) or return 0;
-            }
-            else {
-                $self->{$key} = $init->{$key};
-            }
-        }
-        else {
-            warn "Tried to set $key, but that's not a known key.\n";
-        }
-    }
-    return 1;
-}
-
 sub formatDollars {
     my ($self, $num) = @_;
     my $dollars = sprintf("\$%.2f", $num);
@@ -174,3 +179,80 @@ sub accountedValue {
 }
 
 1;
+
+__END__
+
+=pod
+
+=head1 NAME
+
+StockAccount::Transaction
+
+=head1 SYNOPSIS
+
+    my $st = StockAccount::Transaction->new({
+        date            => $dt,
+        action          => 'sell',
+        symbol          => 'FTR',
+        quantity        => 42,
+        price           => 7.11,
+        commission      => 8.95,
+        regulatoryFees  => 0.01,
+        importedCost    => 289.66,
+    });
+
+    my $price = $st->formatDollars($st->price());
+    print $price, "\n"; # prints string '$7.11'
+    my $dt = $st->date(); # Perl DateTime module object.
+
+=head1 PROPERTIES
+
+These are the public properties of a StockAccount::Transaction object:
+
+    date                # DateTime object.  See http://datetime.perl.org/wiki/datetime/dashboard and discussion below.
+    action              # 'buy' or 'sell'.
+    symbol              # Vernacular stock symbol string, e.g. 'AAPL', 'QQQ', or 'VZ'.
+    exchange            # Optional specification of stock exchange to be associate with symbol, e.g. 'NASDAQ'.
+    quantity            # How many shares were bought or sold, e.g. 100 or 5.
+    price               # Numeric representation of price, e.g. 4.65 instead of the string '$4.65'.
+    commission          # Numeric representation of commission in same currency, e.g. 8.95 instead of the string '$8.95'.
+    regulatoryFees      # Numeric representation of the regulatory fees, see section on "Regulatory Fees" below.
+    importedCost        # Numeric representation of the total expenditure, if a purchase, plus commission and regulatory fees;
+                        #  or revenue, if a sale, less commission and regulatory fees, as imported.  Can be used to check for
+                        #  accounting discrepancies.  Perhaps not the best named property - any suggestions for a better name?
+
+There are also some private properties of the class used internally for
+efficiency or other considerations, they are not documented here.
+
+Any public property can be instantiated in the C<new> method, set with a method
+matching the name of the property, such as C<$st->date($dt)>, or set with the
+C<set> method, e.g. C<$st->set({date => $dt})>, as specified further in the
+method description below.
+
+Public properties can be retrieved by the C<get> method with a string naming the
+property, e.g. C<$st->get('price')>.
+
+All properties can also be read or written directly with a hash dereference.
+Some people don't consider this good object-oriented practice, but I won't stop
+you if that's what you want to do.  E.g. C<$st->{date} = $dt> or
+C<$st->{price}>.
+
+=head1 CONFIGURATION
+
+The following optional environment variables are read and used if set.
+
+    ST_NO_CONFIG                # Set to true (e.g. 1) if you want to skip the configuration block,
+                                #  potentially for an application where module is loaded over and over and high performance is desired.
+    ST_CURRENCY_SYMBOL          # Defaults to '$' if this is not set.
+
+=head1 REGULATORY FEES
+
+In the United States the Securities and Exchange Commission imposes regulatory
+fees on stock brokers or dealers.  Instead of paying these with their profits,
+these for-profit companies often pass these fees onto their customers directly.
+The C<regulatoryFees> property could be used for similar purposes in other
+jurisdictions.
+
+See http://www.sec.gov/answers/sec31.htm for more information.
+
+=cut
