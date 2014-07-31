@@ -7,21 +7,13 @@ use warnings;
 
 use Number::Format;
 
-# Configuration
-my $nf;
-if (!$ENV{ST_NO_CONFIG}) {
-    my $currencySymbol = $ENV{ST_CURRENCY_SYMBOL} || '$';
-    $nf = Number::Format->new({
-        INT_CURR_SYMBOL     => $currencySymbol,
-    });
-}
+use constant BUY        => 0;
+use constant SELL       => 1;
+use constant SHORT      => 2;
+use constant COVER      => 3;
 
-use constant BUY  => 1;
-use constant SELL => 0;
-my $datePattern    = '^\s*([0-9]{2}\/[0-9]{2}\/[0-9]{4})\s*$';
-my $pricePattern   = '^\s*\$((?:[0-9]{1,3},)*[0-9]+(?:\.[0-9]+)?)\s*$';
-my $commifyPattern = '^(-?\$-?[0-9]+)([0-9]{3})';
-my $symbolPattern  = '^\s*(\w+)\s*';
+# Shared Number Format Object for efficiency, see documentation below
+my $nf;
 
 sub new {
     my ($class, $init) = @_;
@@ -36,12 +28,43 @@ sub new {
         commission          => undef,
         regulatoryFees      => undef,
         importedCost        => undef,
+        nf                  => undef,
 
         # 'private' properties
     };
     bless($self, $class);
     $init and $self->set($init);
     return $self;
+}
+
+sub numberFormatNew {
+    return Number::Format->new({
+        INT_CURR_SYMBOL     => $ENV{ST_CURRENCY_SYMBOL} || '$',
+    });
+}
+
+sub nf {
+    my ($self, $nf) = @_;
+    if ($nf) {
+        if (ref($nf) and 'Number::Format' eq ref($nf)) {
+            $self->{nf} = $nf;
+            return 1;
+        }
+        else {
+            warn "Not a valid 'Number::Format' object.\n";
+            return 0;
+        }
+    }
+    else {
+        my $nf = $self->{nf};
+        if ($nf) {
+        }
+        else {
+            $nf = $self->numberFormatNew();
+            $self->{nf} = $nf;
+        }
+        return $nf;
+    }
 }
 
 sub date {
@@ -210,7 +233,7 @@ StockAccount::Transaction
 These are the public properties of a StockAccount::Transaction object:
 
     date                # DateTime object.  See http://datetime.perl.org/wiki/datetime/dashboard and discussion below.
-    action              # 'buy' or 'sell'.
+    action              # One of 'buy', 'sell', 'short', 'cover'.
     symbol              # Vernacular stock symbol string, e.g. 'AAPL', 'QQQ', or 'VZ'.
     exchange            # Optional specification of stock exchange to be associate with symbol, e.g. 'NASDAQ'.
     quantity            # How many shares were bought or sold, e.g. 100 or 5.
@@ -220,6 +243,8 @@ These are the public properties of a StockAccount::Transaction object:
     importedCost        # Numeric representation of the total expenditure, if a purchase, plus commission and regulatory fees;
                         #  or revenue, if a sale, less commission and regulatory fees, as imported.  Can be used to check for
                         #  accounting discrepancies.  Perhaps not the best named property - any suggestions for a better name?
+    nf                  # Perl Number::Format object, usually all objects point to the same one, but you can change that, see
+                        #  documentation section on Number::Format.
 
 There are also some private properties of the class used internally for
 efficiency or other considerations, they are not documented here.
@@ -241,8 +266,6 @@ C<$st->{price}>.
 
 The following optional environment variables are read and used if set.
 
-    ST_NO_CONFIG                # Set to true (e.g. 1) if you want to skip the configuration block,
-                                #  potentially for an application where module is loaded over and over and high performance is desired.
     ST_CURRENCY_SYMBOL          # Defaults to '$' if this is not set.
 
 =head1 REGULATORY FEES
