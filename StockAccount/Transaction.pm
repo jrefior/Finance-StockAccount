@@ -5,8 +5,6 @@ use Exporter 'import';
 use strict;
 use warnings;
 
-use Number::Format;
-
 use constant BUY        => 0;
 use constant SELL       => 1;
 use constant SHORT      => 2;
@@ -267,6 +265,27 @@ C<$st->{price}>.
 The following optional environment variables are read and used if set.
 
     ST_CURRENCY_SYMBOL          # Defaults to '$' if this is not set.
+
+=head1 NUMBER::FORMAT AND DATETIME LIBRARIES
+
+This StockAccount::Transaction Perl module is dependent on:
+
+ Number::Format     To format numbers into currency strings
+
+I started with using '$' and rounding to two decimal places, but then I
+realized that might not be very helpful for people in other countries.  Also
+the problems of how to format the currency (e.g. 'USD' versus '$'), how to
+format negative numbers in the currency string, how to specify a currency,
+etc., have all been handled by Number::Format, so it seemed better to reused
+that code.
+
+ DateTime           
+ 
+In development I quickly ran into the problem of what date format(s) to accept,
+what to print, how the user can specify a different format, etc.  The Perl
+DateTime library has become pretty standard for dealing with those issues, and
+there seemed no good reason for me to duplicate that code.  So instead I store
+a DateTime object in the "dt" property.
 
 =head1 REGULATORY FEES
 
