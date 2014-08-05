@@ -239,7 +239,7 @@ sub actionString {
 
 sub printTransaction {
     my $self = shift;
-    printf("%6s %10s %-4s %6d %6d %6d %6d %8d\n", $self->symbol(), $self->{date}, $self->actionString, $self->{quantity}, $self->{price}, $self->{commission}, $self->{regulatoryFees}, $self->{cashEffect});
+    printf("%6s %10s %-4s %6d %6d %6d %6d %8d\n", $self->symbol(), $self->{date}, $self->actionString, $self->{quantity}, $self->{price}, $self->{commission}, $self->{regulatoryFees}, $self->{otherFees});
     return 1;
 }
 
