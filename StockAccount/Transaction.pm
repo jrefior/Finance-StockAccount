@@ -23,7 +23,7 @@ sub new {
         price               => undef,
         commission          => undef,
         regulatoryFees      => undef,
-        cashEffect          => undef,
+        otherFees           => undef,
     };
     bless($self, $class);
     $init and $self->set($init);
@@ -125,14 +125,31 @@ sub regulatoryFees {
     }
 }
 
+sub priceByQuantity {
+    my $self = shift;
+    return $self->{price} * $self->{quantity};
+}
+
+sub feesAndCommissions {
+    my $self = shift;
+    return $self->{commission} + $self->{regulatoryFees} + $self->{otherFees};
+}
+
 sub cashEffect {
-    my ($self, $cashEffect) = @_;
+    my $self = shift;
+    my $cashEffect;
+    if ($self->buy() or $self->short()) {
+        $cashEffect = 0 - ($self->priceByQuantity() + $self->feesAndCommissions());
+    }
+    elsif ($self->sell() or $self->cover()) {
+        $cashEffect = $self->priceByQuantity() - $self->feesAndCommissions();
+    }
     if ($cashEffect) {
-        $self->{cashEffect} = $cashEffect;
-        return 1;
+        return $cashEffect;
     }
     else {
-        return $self->{cashEffect};
+        warn "Cannot calculate cash effect.\n";
+        return 0;
     }
 }
 
@@ -267,9 +284,7 @@ These are the public properties of a StockAccount::Transaction object:
     price               # Numeric representation of price, e.g. 4.65 instead of the string '$4.65'.
     commission          # Numeric representation of commission in same currency, e.g. 8.95 instead of the string '$8.95'.
     regulatoryFees      # Numeric representation of the regulatory fees, see section on "Regulatory Fees" below.
-    cashEffect          # Numeric representation of the total effect of the transaction on your cash balance sheet.  For example,
-                        #  with a 'buy' result would be 0 - (price * quantity + commission + regulatoryFees). Intended to be
-                        #  added to your cash balance directly to find the new cash balance.
+    otherFees           # Numeric aggregation of any other fees not included in commission and regulatory fees.
 
 Any public property can be instantiated in the C<new> method, set with a method
 matching the name of the property, such as C<$st->date($dt)>, or set with the
