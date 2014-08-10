@@ -10,22 +10,32 @@ use_ok('Finance::StockAccount::Transaction');
 {
     my $st = Finance::StockAccount::Transaction->new();
 
-    my $pn = 4321.01;
+    my $pn = 510.10;
     ok($st->set({price => $pn}), 'Set a price.');
     is($st->{price}, $pn, 'Price equivalency.');
 
-    ok($st->symbol('AAPL'), 'Set a stock');
+    ok($st->symbol('AAPL'), 'Set a stock symbol.');
     is($st->symbol(), 'AAPL', 'Symbol extracted as expected.');
 
-    my $quant = 500;
+    my $quant = 8;
     ok($st->set({quantity => $quant}), 'Set a quantity.');
-    is($st->{quantity}, 500, 'Quantity expected.');
+    is($st->{quantity}, 8, 'Quantity expected.');
 
-    my $action = 'Buy';
-    ok($st->set({action => $action}), 'Set an action.');
-    is($st->{action}, $action, 'Retrieve the action.');
+    ok($st->buy(1), 'Make it a buy.');
+    ok($st->buy(), 'It is a buy.');
+    ok(!$st->sell(), 'It is not a sell.');
+    ok($st->sell(1), 'Make it a sell.');
+    ok(!$st->buy(), 'It is not a buy.');
+    ok($st->sell(), 'It is a sell.');
+    ok($st->buy(1), 'Make it a buy again.');
 
-    ok($st->set({commission => 8.95}), 'Set commission value.');
+    my $commission = 8.95;
+    ok($st->set({commission => $commission}), 'Set commission value.');
+    my $cashEffect = -1 * ($pn * $quant + $commission);
+    is($st->cashEffect(), $cashEffect, 'Cash effect matches.');
+
+    ok($st->printTransaction(), 'Printed the transaction.');
+
 }
 
     

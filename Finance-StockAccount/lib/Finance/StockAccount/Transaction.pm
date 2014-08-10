@@ -21,13 +21,17 @@ sub new {
         stock               => undef,
         quantity            => undef,
         price               => undef,
-        commission          => undef,
-        regulatoryFees      => undef,
-        otherFees           => undef,
+        commission          => 0,
+        regulatoryFees      => 0,
+        otherFees           => 0,
     };
     bless($self, $class);
     $init and $self->set($init);
     return $self;
+}
+
+sub order {
+    return qw(date action stock quantity price commission regulatoryFees otherFees);
 }
 
 sub date {
@@ -187,6 +191,7 @@ sub buy {
     my ($self, $assertion) = @_;
     if ($assertion) {
         $self->{action} = BUY;
+        return 1;
     }
     else {
         return $self->{action} == BUY;
@@ -197,6 +202,7 @@ sub sell {
     my ($self, $assertion) = @_;
     if ($assertion) {
         $self->{action} = SELL;
+        return 1;
     }
     else {
         return $self->{action} == SELL;
@@ -207,6 +213,7 @@ sub short {
     my ($self, $assertion) = @_;
     if ($assertion) {
         $self->{action} = SHORT;
+        return 1;
     }
     else {
         return $self->{action} == SHORT;
@@ -217,6 +224,7 @@ sub cover {
     my ($self, $assertion) = @_;
     if ($assertion) {
         $self->{action} = COVER;
+        return 1;
     }
     else {
         return $self->{action} == COVER;
@@ -244,7 +252,31 @@ sub actionString {
 
 sub printTransaction {
     my $self = shift;
-    printf("%6s %10s %-4s %6d %6d %6d %6d %8d\n", $self->symbol(), $self->{date}, $self->actionString, $self->{quantity}, $self->{price}, $self->{commission}, $self->{regulatoryFees}, $self->{otherFees});
+    my $pattern = "%20s %-40s\n";
+    foreach my $key ($self->order()) {
+        if (defined($self->{$key})) {
+            if ($key eq 'stock') {
+                my $symbol = $self->symbol();
+                my $exchange = $self->exchange();
+                if (defined($symbol)) {
+                    printf($pattern, 'symbol', $self->symbol());
+                }
+                if (defined($exchange)) {
+                    printf($pattern, 'exchange', $self->exchange());
+                }
+            }
+            else {
+                my $value;
+                if ($key eq 'action') {
+                    $value = $self->actionString();
+                }
+                else {
+                    $value = $self->{$key};
+                }
+                printf($pattern, $key, $value);
+            }
+        }
+    }
     return 1;
 }
 
