@@ -65,19 +65,24 @@ sub stock {
         }
     }
     else {
-        return $self->{stock};
+        $stock = $self->{stock};
+        if (!$stock) {
+            $stock = Finance::StockAccount::Stock->new();
+            $self->{stock} = $stock;
+        }
+        return $stock;
     }
 }
 
 sub symbol {
     my ($self, $symbol) = @_;
-    my $stock = $self->{stock};
+    my $stock = $self->stock();
     return $stock->symbol($symbol);
 }
 
 sub exchange {
     my ($self, $exchange) = @_;
-    my $stock = $self->{stock};
+    my $stock = $self->stock();
     return $stock->exchange($exchange);
 }
 
