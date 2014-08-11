@@ -1,3 +1,21 @@
+package Finance::StockAccount::Import;
+
+use 5.006;
+use strict;
+use warnings FATAL => 'all';
+
+use Finance::StockAccount::Transaction;
+
+sub new {
+    my ($class, $file) = @_;
+    $file or die "Please pass a file to import.\n";
+    my $self = {
+        file                => $file,
+        fh                  => undef,
+        headers             => undef,
+    };
+    return bless($self, $class);
+}
 
 
 

@@ -1,24 +1,21 @@
-package OptionsXpress;
+package Finance::StockAccount::Import::OptionsXpress;
 
 use Exporter 'import';
 @EXPORT_OK = qw(new);
 
-use StockTransaction;
+use parent 'Finance::StockAccount::Import';
+
 
 #### Expected Fields, tab separated:
-# Trade Date	Indicator	Action	Symbol/Desc	Qty	Price	Commission	Net Amount	Gain Loss	
-# 0             1           2       3           4   5       6           7           8
-my @pattern = qw(date 0 action 2 symbol 3 quantity 4 price 5 commission 6);
+# Symbol, Description, Action, Quantity, Price, Commission, Reg Fees, Date, TransactionID, Order Number, Transaction Type ID, Total Cost 
+# 0       1            2       3         4      5           6         7     8              9             10                   11
+my @pattern = qw(symbol 0 action 2 quantity 3 price 4 commission 5 regulatoryFees 6 date 7 totalCost 11);
 
 sub new {
     my ($class, $file) = @_;
-    $file or die "Please pass a file to OptionsXpress->new().\n";
-    my $self = {
-        file                => $file,
-        fh                  => undef,
-        headers             => undef,
-    };
-    bless($self, $class);
+    my $self = SUPER::new($class, $file);
+    $self->{pattern} = \@pattern;
+    $self->{headers} = undef;
     $self->init();
     return $self;
 }
@@ -33,9 +30,10 @@ sub init {
     chomp($hline);
     my @headers = split("\t", $hline);
     pop(@headers);
-    scalar(@headers) >= scalar(@pattern)/2 or die "Unexpected number of headers. Header line:\n$hline\n";
+    scalar(@headers) >= scalar(@{$self->{pattern})/2 or die "Unexpected number of headers. Header line:\n$hline\n";
     $self->{headers} = \@headers;
-    <$fh>;
+    my $blankLine = <$fh>;
+    $blankLine =~ /\w/ and warn "Expected blank line after header line.  May have inadvertantly skipped first transaction...\n";
     return 1;
 }
 
