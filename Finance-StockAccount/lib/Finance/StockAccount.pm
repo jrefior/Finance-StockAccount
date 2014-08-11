@@ -4,6 +4,16 @@ use 5.006;
 use strict;
 use warnings FATAL => 'all';
 
+sub new {
+    my ($class, $init) = @_;
+    my $self = {
+
+    };
+    bless($self, $class);
+    $init and $self->set($init);
+    return $self;
+}
+
 sub possiblePurchase {
     my $self = shift;
     return (($self->{action} eq 'Buy') && ($self->{quantity} > $self->{accounted})) ? 1 : 0;
