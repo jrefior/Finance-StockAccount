@@ -33,7 +33,20 @@ use_ok('Finance::StockAccount::Transaction');
     is($st->cashEffect(), $cashEffect, 'Cash effect matches.');
 
     ok($st->printTransaction(), 'Printed the transaction.');
+}
 
+
+{
+    my $hash = {
+        symbol          => 'AMD',
+        price           => 4.05,
+        quantity        => 500,
+    };
+    my $st = Finance::StockAccount::Transaction->new($hash);
+    ok($st, 'Instantiated new transaction object using a hash of parameters.');
+    is($st->symbol(), 'AMD', 'Symbol matches.');
+    is($st->price(), 4.05, 'Price matches.');
+    is($st->quantity(), 500, 'Quantity matches.');
 }
 
     

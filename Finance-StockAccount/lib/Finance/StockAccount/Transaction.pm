@@ -15,7 +15,6 @@ use constant COVER      => 3;
 sub new {
     my ($class, $init) = @_;
     my $self = {
-        # 'public' properties
         date                => undef,
         action              => undef,
         stock               => undef,
@@ -164,16 +163,23 @@ sub cashEffect {
 
 sub set {
     my ($self, $init) = @_;
-    for my $key (keys %$init) {
+    my $status = 1;
+    foreach my $key (keys %{$init}) {
         if (exists($self->{$key})) {
             $self->{$key} = $init->{$key};
-            return 1;
+        }
+        elsif ($key eq 'symbol') {
+            $self->symbol($init->{$key}); 
+        }
+        elsif ($key eq 'exchange') {
+            $self->exchange($init->{$key});
         }
         else {
+            $status = 0;
             warn "Tried to set $key in StockAccount::Transaction object, but that's not a known key.\n";
-            return 0;
         }
     }
+    return $status;
 }
 
 sub get {
@@ -254,6 +260,9 @@ sub printTransaction {
     my $self = shift;
     my $pattern = "%20s %-40s\n";
     foreach my $key ($self->order()) {
+        if ($key eq 'price') {
+            print "Trying to print price... ", $self->{price}, "\n";
+        }
         if (defined($self->{$key})) {
             if ($key eq 'stock') {
                 my $symbol = $self->symbol();

@@ -10,10 +10,11 @@ use parent 'Finance::StockAccount::Import';
 # Symbol, Description, Action, Quantity, Price, Commission, Reg Fees, Date, TransactionID, Order Number, Transaction Type ID, Total Cost 
 # 0       1            2       3         4      5           6         7     8              9             10                   11
 my @pattern = qw(symbol 0 action 2 quantity 3 price 4 commission 5 regulatoryFees 6 date 7 totalCost 11);
+my $numFields = 12;
 
 sub new {
     my ($class, $file) = @_;
-    my $self = SUPER::new($class, $file);
+    my $self = $class->SUPER::new($file);
     $self->{pattern} = \@pattern;
     $self->{headers} = undef;
     $self->init();
@@ -28,9 +29,8 @@ sub init {
 
     my $hline = <$fh>;
     chomp($hline);
-    my @headers = split("\t", $hline);
-    pop(@headers);
-    scalar(@headers) >= scalar(@{$self->{pattern})/2 or die "Unexpected number of headers. Header line:\n$hline\n";
+    my @headers = split(', ', $hline);
+    scalar(@headers) == $numFields or die "Unexpected number of headers. Header line:\n$hline\n";
     $self->{headers} = \@headers;
     my $blankLine = <$fh>;
     $blankLine =~ /\w/ and warn "Expected blank line after header line.  May have inadvertantly skipped first transaction...\n";
@@ -40,18 +40,41 @@ sub init {
 sub nextSt {
     my $self = shift;
     my $fh = $self->{fh};
+    my $pattern = $self->{pattern};
     if (my $line = <$fh>) {
         chomp($line);
-        my @row = split("\t", $line);
-        pop(@row);
+        my @row = split(',', $line);
 
         my $hash = {};
-        for (my $x=0; $x<scalar(@pattern)-1; $x+=2) {
-            if (exists($row[$pattern[$x+1]])) {
-                $hash->{$pattern[$x]} = $row[$pattern[$x+1]];
+        my $action;
+        for (my $x=0; $x<scalar(@$pattern)-1; $x+=2) {
+            if (exists($row[$pattern->[$x+1]])) {
+                my $key = $pattern->[$x];
+                if ($key eq 'action') {
+                    $action = $row[$pattern->[$x+1]];
+                }
+                elsif ($key eq 'totalCost') {
+                    next();
+                }
+                else {
+                    my $value = $row[$pattern->[$x+1]];
+                    if ($key =~ /^(?:price|quantity|commission|regulatoryFees)$/) {
+                        $value += 0;
+                    }
+                    $hash->{$pattern->[$x]} = $row[$pattern->[$x+1]];
+                }
             }
         }
-        my $st = StockTransaction->new($hash);
+        # print "Hash Price is ", $hash->{price}, "\n";
+        # use Data::Dumper;
+        # print Dumper($hash), "\n";
+        my $st = Finance::StockAccount::Transaction->new($hash);
+        if ($action eq 'Sell') {
+            $st->sell(1);
+        }
+        elsif ($action eq 'Buy') {
+            $st->buy(1);
+        }
         return $st;
     }
     else {

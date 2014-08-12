@@ -17,27 +17,25 @@ sub new {
     return bless($self, $class);
 }
 
-
-
-
-
-
-            if ($key eq 'date') {
-                $self->extractDate($value) or return 0;
-            }
-            elsif ($key eq 'price') {
-                $self->extractPrice($value) or return 0;
-            }
-            elsif ($key eq 'commission') {
-                $self->extractCommission($value) or return 0;
-            }
-            elsif ($key eq 'symbol') {
-                $self->extractSymbol($value) or return 0;
-            }
- 
+sub renameMe {
+    my ($self, $key, $value) = @_;
+    if ($key eq 'date') {
+        $self->extractDate($value) or return 0;
+    }
+    elsif ($key eq 'price') {
+        $self->extractPrice($value) or return 0;
+    }
+    elsif ($key eq 'commission') {
+        $self->extractCommission($value) or return 0;
+    }
+    elsif ($key eq 'symbol') {
+        $self->extractSymbol($value) or return 0;
+    }
+}
 
 sub extractPrice {
     my ($self, $priceString) = @_;
+    my $pricePattern = '';
     if ($priceString =~ /$pricePattern/) {
         my $price = $1;
         $price =~ s/,//g;
@@ -51,6 +49,7 @@ sub extractPrice {
 
 sub extractCommission {
     my ($self, $commissionString) = @_;
+    my $pricePattern = '';
     if ($commissionString =~ /$pricePattern/) {
         my $commission = $1;
         $commission =~ s/,//g;
@@ -64,6 +63,7 @@ sub extractCommission {
 
 sub extractSymbol {
     my ($self, $symbolString) = @_;
+    my $symbolPattern = '';
     if ($symbolString =~ /$symbolPattern/) {
         $self->{symbol} = $1;
     }
@@ -72,3 +72,5 @@ sub extractSymbol {
         return 0;
     }
 }
+
+1;
