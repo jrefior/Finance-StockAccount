@@ -52,6 +52,27 @@ sub exchange {
     }
 }
 
+sub same {
+    my ($self, $stock) = @_;
+    my $symbol = $self->symbol();
+    if ($symbol and $symbol eq $stock->symbol()) {
+        my $exchange = $self->exchange();
+        if ($exchange or $stock->exchange()) {
+            if ($exchange eq $stock->exchange()) {
+                return 1;
+            }
+            else {
+                return 0;
+            }
+        }
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
+
 1;
 
 __END__

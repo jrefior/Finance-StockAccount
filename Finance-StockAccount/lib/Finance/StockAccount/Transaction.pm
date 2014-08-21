@@ -77,6 +77,18 @@ sub stock {
     }
 }
 
+sub sameStock {
+    my ($self, $testStock) = @_;
+    my $stock = $self->{stock};
+    if ($stock) {
+        return $stock->same($testStock);
+    }
+    else {
+        warn "Can't test for sameStock, object stock property not yet defined.\n";
+        return 0;
+    }
+}
+
 sub symbol {
     my ($self, $symbol) = @_;
     my $stock = $self->stock();

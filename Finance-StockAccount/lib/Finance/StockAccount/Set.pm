@@ -1,20 +1,26 @@
-package TransactionSet;
+package Finance::StockAccount::Set;
 use Exporter 'import';
 @EXPORT_OK = qw(new);
 
 use strict;
 use warnings;
 
-use StockTransaction;
-
-my $tsPattern = "%20s %20s %20s\n";
+use Finance::StockAccount::Transaction;
 
 sub new {
     my ($class, $init) = @_;
     my $self = {
-        stBySymbol          => undef, # hash of arrays, e.g. {'AAPL' => [$st1, $st2, ...], ...}
-        accountSets         => undef,
-        stats               => undef,
+        stock               => undef,
+        accountTransactions => [],
+        stats               =>
+            {
+                stale               => 1,
+                sorted              => 0,
+                profit              => 0,
+                investment          => 0,
+                return              => 0,
+                ROI                 => 0,
+            },
     };
     bless($self, $class);
     $init and $self->add($init);
@@ -22,13 +28,27 @@ sub new {
 }
 
 sub add {
-    my ($self, $transactions) = @_;
-    ($transactions and 'ARRAY' eq ref($transactions))
+    my ($self, $accountTransactions) = @_;
+    ($accountTransactions and 'ARRAY' eq ref($accountTransactions))
         or die "TransactionSet->add([\$st1, \$st2, \$st3, ...]) ... method requires a reference to a list of st objects.\n";
-    foreach my $st (@$transactions) {
-       'StockTransaction' eq ref($st) or die "Not a valid st object.\n";
-       push(@{$self->{stBySymbol}{$st->{symbol}}}, $st);
+    my $set = $self->{set};
+    my $added = 0;
+    my $stock = $self->{stock};
+    foreach my $at (@$accountTransactions) {
+        'Finance::StockAccount::AccountTransaction' eq ref($st) or die "Not a valid at object.\n";
+        if (!$stock) {
+            if ($stock = $at->stock()) {
+                $self->{stock} = $stock;
+            }
+        }
+        $stock->same($at->stock()) or die "Given Stock Transaction object does not match stock for set, or set stock is undefined.\n";
+        push(@$set, $at);
+        $added = 1;
     }
+    if ($added) {
+        $set->{stale} = 1;
+    }
+    return $added;
 }
 
 sub cmpStDate {
@@ -63,41 +83,13 @@ sub cmpStDate {
 }
 
 sub cmpStPrice {
-    my ($self, $st1, $st2) = @_;
-    my $p1 = $st1->{price};
-    my $p2 = $st2->{price};
+    my ($self, $at1, $at2) = @_;
+    my $p1 = $at1->{price};
+    my $p2 = $at2->{price};
     return $p1  > $p2 ? 1 :
            $p1 == $p2 ? 0 :
            -1;
 }
-
-sub available {
-    my $self = shift;
-    my $available = $self->{quantity} - $self->{accounted};
-    return ($available > 0 ? $available : 0);
-}
-
-sub accountShares {
-    my ($self, $shares) = @_;
-    unless ($shares and $shares > 0) {
-        warn "AccountShares of $shares bad input.\n";
-        return 0;
-    }
-    my $available = $self->available();
-    if (0 == $available) {
-        warn "Requested accountShares but no shares available.\n";
-        return 0;
-    }
-    elsif ($shares > $available) {
-        $self->{accounted} = $self->{quantity};
-        return $available;
-    }
-    else {
-        $self->{accounted} += $shares;
-        return $shares;
-    }
-}
-
 
 sub sortSt {
     my $self = shift;
@@ -108,17 +100,8 @@ sub sortSt {
     return 1;
 }
 
-sub printSymbolTransactions {
-    my ($self, $symbol) = @_;
-    my $transactions = $self->{stBySymbol}{$symbol};
-    print $symbol, "\n";
-    foreach my $st (@$transactions) {
-        $st->printTransaction();
-    }
-}
-
 sub accountPriorPurchase {
-    my ($self, $symbol, $index) = @_;
+    my ($self, $index) = @_;
     my $transactions = $self->{stBySymbol}{$symbol};
     my @priorPurchases = sort { $self->cmpStPrice($a, $b) } grep { $_->possiblePurchase() } @{$transactions}[0 .. $index];
     my $sale = $transactions->[$index];
@@ -189,7 +172,6 @@ sub printTransactionSets {
         print "\n\n";
     }
 }
-
 
 sub populateStats {
     my ($self, $symbol) = @_;
