@@ -41,9 +41,12 @@ use_ok('Finance::StockAccount::Transaction');
         symbol          => 'AMD',
         price           => 4.05,
         quantity        => 500,
+        action          => 'sell',
     };
     my $st = Finance::StockAccount::Transaction->new($hash);
     ok($st, 'Instantiated new transaction object using a hash of parameters.');
+    ok($st->sell(), 'Initiated as sale action.');
+    ok(!$st->buy(), 'Is therefore not a buy action.');
     is($st->symbol(), 'AMD', 'Symbol matches.');
     is($st->price(), 4.05, 'Price matches.');
     is($st->quantity(), 500, 'Quantity matches.');

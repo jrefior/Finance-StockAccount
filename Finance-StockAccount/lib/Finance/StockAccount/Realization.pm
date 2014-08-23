@@ -1,4 +1,4 @@
-package Finance::StockAccount::Set;
+package Finance::StockAccount::Realization;
 use Exporter 'import';
 @EXPORT_OK = qw(new);
 
@@ -7,98 +7,40 @@ use warnings;
 
 use Finance::StockAccount::AccountTransaction;
 
-use DateTime;
-
 sub new {
     my ($class, $init) = @_;
     my $self = {
-        stock               => undef,
-        accountTransactions => [],
-        stats               =>
-            {
-                stale               => 1,
-                profit              => 0,
-                investment          => 0,
-                return              => 0,
-                ROI                 => 0,
-            },
-    };
-    bless($self, $class);
-    $init and $self->add($init);
-    return $self;
-}
-
-sub stale {
-    my ($self, $assertion) = @_;
-    if (defined($assertion)) {
-        if ($assertion == 1 or $assertion == 0) {
-            $self->{stats}{stale} = $assertion ? 1 : 0;
-            return 1;
-        }
-        else {
-            die "Method 'stale' only accepts assertions in the form of 1 or 0 -- $assertion is not valid.\n";
-        }
-    }
-    else {
-        return $self->{stats}{stale};
-    }
-}
-
-sub add {
-    my ($self, $accountTransactions) = @_;
-    ($accountTransactions and 'ARRAY' eq ref($accountTransactions))
-        or die "Set->add([\$st1, \$st2, \$st3, ...]) ... method requires a reference to a list of st objects.\n";
-    my $set = $self->{accountTransactions};
-    my $added = 0;
-    my $stock = $self->{stock};
-    foreach my $at (@$accountTransactions) {
-        'Finance::StockAccount::AccountTransaction' eq ref($at) or die "Not a valid at object.\n";
-        if (!$stock) {
-            if ($stock = $at->stock()) {
-                $self->{stock} = $stock;
-            }
-        }
-        $stock->same($at->stock()) or die "Given Stock Transaction object does not match stock for set, or set stock is undefined.\n";
-        push(@$set, $at);
-        $added = 1;
-    }
-    if ($added) {
-        $self->stale(1);
-        $self->{dateSort} = 0;
-    }
-    return $added;
-}
-
-sub cmpPrice {
-    my ($self, $at1, $at2) = @_;
-    my $p1 = $at1->{price};
-    my $p2 = $at2->{price};
-    return $p1  > $p2 ? 1 :
-           $p1 == $p2 ? 0 :
-           -1;
-}
-
-sub dateSort {
-    my $self = shift;
-    $self->{accountTransactions} = [sort { DateTime->compare($a->date(), $b->date()) } @{$self->{accountTransactions}}];
-    $self->{dateSort} = 1;
-    return 1;
-}
-
-sub accountPriorPurchase {
-    my ($self, $index) = @_;
-    if (!$self->{dateSort}) {
-        $self->dateSort();
-    }
-    my $accountTransactions = $self->{accountTransactions};
-    my @priorPurchases = sort { $self->cmpStPrice($a, $b) } grep { $_->possiblePurchase() } @{$accountTransactions}[0 .. $index];
-    my $sale = $accountTransactions->[$index];
-    my $set = {
+        stock           => undef,
         sale            => $sale,
         purchases       => [],
         saleValue       => 0,
         purchaseValue   => 0,
         realized        => undef,
+    };
+    bless($self, $class);
+    $init and $self->set($init);
+    return $self;
+}
+
+sub set {
+    my ($self, $init) = @_;
+    my $status = 1;
+    foreach my $key (keys %{$init}) {
+        if (exists($self->{$key})) {
+            $self->{$key} = $init->{$key};
+        }
+        else {
+            $status = 0;
+            warn "Tried to set $key in Realization object, but that's not a known key.\n";
+        }
+    }
+    return $status;
+}
+
+
+    my @priorPurchases = sort { $self->cmpStPrice($a, $b) } grep { $_->possiblePurchase() } @{$accountTransactions}[0 .. $index];
+    my $sale = $accountTransactions->[$index];
+    my $set = {
     };
     foreach my $priorPurchase (@priorPurchases) {
         my $sharesSold = $sale->available();

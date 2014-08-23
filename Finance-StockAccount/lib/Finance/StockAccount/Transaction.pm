@@ -47,8 +47,21 @@ sub date {
 sub action {
     my ($self, $action) = @_;
     if ($action) {
-        $self->{action} = $action;
-        return 1;
+        if ($action eq 'buy') {
+            return $self->buy(1);
+        }
+        elsif ($action eq 'sell') {
+            return $self->sell(1);
+        }
+        elsif ($action eq 'short') {
+            return $self->short(1);
+        }
+        elsif ($action eq 'cover') {
+            return $self->cover(1);
+        }
+        else {
+            die "Action must a string, one of 'buy', 'sell', 'short', 'cover'.\n";
+        }
     }
     else {
         return $self->{action};
@@ -178,7 +191,12 @@ sub set {
     my $status = 1;
     foreach my $key (keys %{$init}) {
         if (exists($self->{$key})) {
-            $self->{$key} = $init->{$key};
+            if ($key eq 'action') {
+                $self->action($init->{$key});
+            }
+            else {
+                $self->{$key} = $init->{$key};
+            }
         }
         elsif ($key eq 'symbol') {
             $self->symbol($init->{$key}); 
@@ -205,6 +223,17 @@ sub get {
     }
 }
 
+sub validateAction {
+    my $self = shift;
+    if (!defined($self->{action})) {
+        die "Action has not yet been set.";
+        return 0;
+    }
+    else {
+        return 1;
+    }
+}
+
 sub buy {
     my ($self, $assertion) = @_;
     if ($assertion) {
@@ -212,6 +241,7 @@ sub buy {
         return 1;
     }
     else {
+        $self->validateAction();
         return $self->{action} == BUY;
     }
 }
@@ -223,6 +253,7 @@ sub sell {
         return 1;
     }
     else {
+        $self->validateAction();
         return $self->{action} == SELL;
     }
 }
@@ -234,6 +265,7 @@ sub short {
         return 1;
     }
     else {
+        $self->validateAction();
         return $self->{action} == SHORT;
     }
 }
@@ -245,6 +277,7 @@ sub cover {
         return 1;
     }
     else {
+        $self->validateAction();
         return $self->{action} == COVER;
     }
 }

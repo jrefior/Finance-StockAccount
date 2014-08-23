@@ -11,6 +11,18 @@ sub new {
     my ($class, $init) = @_;
     my $self = $class->SUPER::new($init);
     $self->{accounted} = 0;
+    return $self;
+}
+
+sub accounted {
+    my ($self, $accounted) = @_;
+    if ($accounted) {
+        $self->{accounted} = $accounted;
+        return 1;
+    }
+    else {
+        return $self->{accounted};
+    }
 }
 
 sub available {
