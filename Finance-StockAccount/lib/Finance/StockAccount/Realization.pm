@@ -11,16 +11,23 @@ use Finance::StockAccount::Acquisition;
 sub new {
     my ($class, $init) = @_;
     my $self = {
-        stock           => undef,
-        sale            => $sale,
-        acquisitions    => [],
-        saleProceeds    => 0,
-        costBasis       => 0,
-        realized        => undef,
+        stock               => undef,
+        divestment          => undef,
+        acquisitions        => [],
+        divestmentProceeds  => 0,
+        costBasis           => 0,
+        realized            => undef,
     };
     bless($self, $class);
     $init and $self->set($init);
     return $self;
+}
+
+sub addAcquisition {
+    my ($self, $acquisition) = @_;
+    push(@{$self->{acquisitions}}, $acquisition);
+    $self->{costBasis} -= $acquisition->cashEffect();
+    return 1;
 }
 
 sub set {
@@ -28,7 +35,32 @@ sub set {
     my $status = 1;
     foreach my $key (keys %{$init}) {
         if (exists($self->{$key})) {
-            $self->{$key} = $init->{$key};
+            if ($key eq 'divestment') {
+                my $divestment = $init->{$key};
+                if ($divestment and ref($divestment)) {
+                    $self->{divestment} = $divestment;
+                    $self->{divestmentProceeds} = $divestment->cashEffect();
+                }
+                else {
+                    $status = 0;
+                    warn "Invalid divestment value in Realization intialization hash.\n";
+                }
+            }
+            elsif ($key eq 'acquisitions') {
+                my $acquisitions = $init->{$key};
+                if (ref($acquisitions) and 'ARRAY' eq ref($acquisitions)) {
+                    foreach my $acquisition (@$acquisitions) {
+                        $self->addAcquisition($acquisition);
+                    }
+                }
+                else {
+                    $status = 0;
+                    warn "In Realized init, acquisitions value should be a ref to an array of Acquisition objects.\n";
+                }
+            }
+            else {
+                $self->{$key} = $init->{$key};
+            }
         }
         else {
             $status = 0;
@@ -38,89 +70,16 @@ sub set {
     return $status;
 }
 
-sub addAcquisition {
-    my ($self, $acquisition) = @_;
-    push(@{$self->{acquisitions}}, $acquisition);
-    $self->{costBasis} += (0 - $acquisition->cashEffect());
-    return 1;
-}
-
-
-
-    my @priorPurchases = sort { $self->cmpStPrice($a, $b) } grep { $_->possiblePurchase() } @{$accountTransactions}[0 .. $index];
-    my $sale = $accountTransactions->[$index];
-    my $set = {
-    };
-    foreach my $priorPurchase (@priorPurchases) {
-        my $sharesSold = $sale->available();
-        last unless $sharesSold;
-        my $accounted = $priorPurchase->accountShares($sharesSold);
-        if ($accounted) {
-            push(@{$set->{purchases}}, $priorPurchase);
-            $sale->accountShares($accounted);
-            $set->{purchaseValue} += $priorPurchase->accountedValue();
-        }
-    }
-    if (scalar(@{$set->{purchases}})) {
-        $set->{saleValue} = $sale->accountedValue();
-        $set->{realized} = $set->{saleValue} - $set->{purchaseValue};
-        push(@{$self->{accountSets}{$symbol}}, $set);
-    }
-    return 1;
-}
-
-sub accountSales {
-    my ($self, $symbol) = @_;
-    my $transactions = $self->{stBySymbol}{$symbol};
-    my $sale;
-    my $index = 0;
-    for (my $x=0; $x<scalar(@$transactions); $x++) {
-        my $st = $transactions->[$x];
-        if ($st->isSale()) {
-            if ($st->available()) {
-                $self->accountPriorPurchase($symbol, $x);
-            }
-        }
-    }
-}
-
-sub accountAllSales {
+sub realize {
     my $self = shift;
-    foreach my $symbol (keys %{$self->{stBySymbol}}) {
-        $self->accountSales($symbol);
-    }
+    $self->{realized} = $self->{divestmentProceeds} - $self->{costBasis};
     return 1;
 }
 
-sub printTransactionSets {
-    my $self = shift;
-    foreach my $symbol (sort keys %{$self->{accountSets}}) {
-        print $symbol, ' ', '-'x10, "\n";
-        my @totalValue = (0, 0, 0);
-        foreach my $set (@{$self->{accountSets}{$symbol}}) {
-            my $purchaseValue = $set->{purchaseValue};
-            my $saleValue = $set->{saleValue};
-            my $realized = $set->{realized};
-            printf($tsPattern, map { StockTransaction->formatDollars($_) } ($purchaseValue, $saleValue, $realized));
-            $totalValue[0] += $purchaseValue;
-            $totalValue[1] += $saleValue;
-            $totalValue[2] += $realized;
-        }
-        print '='x80, "\n";
-        printf($tsPattern, map { StockTransaction->formatDollars($_) } @totalValue);
-        print "\n\n";
-    }
-}
-
-sub populateStats {
-    my ($self, $symbol) = @_;
-    my $sets = $self->{accountSets}{$symbol};
-    my ($firstPurchaseDate, $finalSaleDate, $totalRealized);
-    foreach my $set (@$sets) {
-        my $sale = $set->{sale};
-    }
-}
-
+sub divestment          { return shift->{divestment};       }
+sub acquisitions        { return shift->{acquisitions};     }
+sub costBasis           { return shift->{costBasis};        }
+sub realized            { return shift->{realized};         }
 
 
 
