@@ -6,15 +6,16 @@ use strict;
 use warnings;
 
 use Finance::StockAccount::AccountTransaction;
+use Finance::StockAccount::Acquisition;
 
 sub new {
     my ($class, $init) = @_;
     my $self = {
         stock           => undef,
         sale            => $sale,
-        purchases       => [],
-        saleValue       => 0,
-        purchaseValue   => 0,
+        acquisitions    => [],
+        saleProceeds    => 0,
+        costBasis       => 0,
         realized        => undef,
     };
     bless($self, $class);
@@ -36,6 +37,14 @@ sub set {
     }
     return $status;
 }
+
+sub addAcquisition {
+    my ($self, $acquisition) = @_;
+    push(@{$self->{acquisitions}}, $acquisition);
+    $self->{costBasis} += (0 - $acquisition->cashEffect());
+    return 1;
+}
+
 
 
     my @priorPurchases = sort { $self->cmpStPrice($a, $b) } grep { $_->possiblePurchase() } @{$accountTransactions}[0 .. $index];
