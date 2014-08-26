@@ -53,8 +53,10 @@ sub accountShares {
 }
 
 sub possiblePurchase {
-    my $self = shift;
-    if ($self->buy() and $self->available()) {
+    my ($self, $actionString) = @_;
+    if (    (($actionString eq 'sale' and $self->buy()) or
+             ($actionString eq 'cover' and $self->short()))
+            and $self->available()) {
         return 1;
     }
     else {

@@ -76,6 +76,11 @@ sub realize {
     return 1;
 }
 
+sub acquisitionCount {
+    my $self = shift;
+    return scalar(@{$self->{acquisitions}});
+}
+
 sub divestment          { return shift->{divestment};       }
 sub acquisitions        { return shift->{acquisitions};     }
 sub costBasis           { return shift->{costBasis};        }

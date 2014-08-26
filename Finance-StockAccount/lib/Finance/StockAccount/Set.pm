@@ -5,21 +5,23 @@ use Exporter 'import';
 use strict;
 use warnings;
 
-use Finance::StockAccount::AccountTransaction;
-
 use DateTime;
+
+use Finance::StockAccount::Realization;
+
 
 sub new {
     my ($class, $init) = @_;
     my $self = {
         stock               => undef,
         accountTransactions => [],
+        realizations        => [],
         stats               =>
             {
                 stale               => 1,
                 profit              => 0,
                 investment          => 0,
-                return              => 0,
+                proceeds            => 0,
                 ROI                 => 0,
             },
     };
@@ -88,88 +90,55 @@ sub dateSort {
 sub accountPriorPurchase {
     my ($self, $index) = @_;
     if (!$self->{dateSort}) {
-        $self->dateSort();
+        die "Cannot account prior purchase when transactions have not been sorted by date.\n";
     }
     my $accountTransactions = $self->{accountTransactions};
-    my @priorPurchases = sort { $self->cmpStPrice($a, $b) } grep { $_->possiblePurchase() } @{$accountTransactions}[0 .. $index];
-    my $sale = $accountTransactions->[$index];
-    my $set = {
-        sale            => $sale,
-        purchases       => [],
-        saleValue       => 0,
-        purchaseValue   => 0,
-        realized        => undef,
-    };
+    my $divestment = $accountTransactions->[$index];
+    my $actionString = $divestment->actionString();
+    my $realization = Finance::StockAccount::Realization->new({
+        stock           => $divestment->stock(),
+        divestment      => $divestment,
+    });
+    my @priorPurchases = sort { $self->cmpStPrice($a, $b) } grep { $_->possiblePurchase($actionString) } @{$accountTransactions}[0 .. $index];
     foreach my $priorPurchase (@priorPurchases) {
-        my $sharesSold = $sale->available();
-        last unless $sharesSold;
-        my $accounted = $priorPurchase->accountShares($sharesSold);
+        my $sharesDivested = $divestment->available();
+        last unless $sharesDivested;
+        my $accounted = $priorPurchase->accountShares($sharesDivested);
         if ($accounted) {
-            push(@{$set->{purchases}}, $priorPurchase);
-            $sale->accountShares($accounted);
-            $set->{purchaseValue} += $priorPurchase->accountedValue();
+            my $acquisition = Finance::StockAccount::Acquisition->new($priorPurchase, $accounted);
+            $realization->addAcquisition($acquisition);
+            $divestment->accountShares($accounted);
         }
     }
-    if (scalar(@{$set->{purchases}})) {
-        $set->{saleValue} = $sale->accountedValue();
-        $set->{realized} = $set->{saleValue} - $set->{purchaseValue};
-        push(@{$self->{accountSets}{$symbol}}, $set);
+    if ($realization->acquisitionCount()) {
+        $realization->realize();
+        push(@{$self->{realizations}}, $realization);
+        return 1;
     }
-    return 1;
+    else {
+        my $symbol = $divestment->symbol();
+        warn "Unable to account for sold shares of symbol $symbol at index $index.\n";
+        return 0;
+    }
 }
 
 sub accountSales {
-    my ($self, $symbol) = @_;
-    my $transactions = $self->{stBySymbol}{$symbol};
-    my $sale;
-    my $index = 0;
-    for (my $x=0; $x<scalar(@$transactions); $x++) {
-        my $st = $transactions->[$x];
-        if ($st->isSale()) {
-            if ($st->available()) {
-                $self->accountPriorPurchase($symbol, $x);
+    my $self = shift;
+    if (!$self->{dateSort}) {
+        $self->dateSort();
+    }
+    my $accountTransactions = $self->{accountTransactions};
+    my $status = 0;
+    for (my $x=0; $x<scalar(@$accountTransactions); $x++) {
+        my $at = $accountTransactions->[$x];
+        if ($at->sell() or $at->short()) {
+            if ($at->available()) {
+                $status += $self->accountPriorPurchase($x);
             }
         }
     }
+    return $status;
 }
-
-sub accountAllSales {
-    my $self = shift;
-    foreach my $symbol (keys %{$self->{stBySymbol}}) {
-        $self->accountSales($symbol);
-    }
-    return 1;
-}
-
-sub printTransactionSets {
-    my $self = shift;
-    foreach my $symbol (sort keys %{$self->{accountSets}}) {
-        print $symbol, ' ', '-'x10, "\n";
-        my @totalValue = (0, 0, 0);
-        foreach my $set (@{$self->{accountSets}{$symbol}}) {
-            my $purchaseValue = $set->{purchaseValue};
-            my $saleValue = $set->{saleValue};
-            my $realized = $set->{realized};
-            printf($tsPattern, map { StockTransaction->formatDollars($_) } ($purchaseValue, $saleValue, $realized));
-            $totalValue[0] += $purchaseValue;
-            $totalValue[1] += $saleValue;
-            $totalValue[2] += $realized;
-        }
-        print '='x80, "\n";
-        printf($tsPattern, map { StockTransaction->formatDollars($_) } @totalValue);
-        print "\n\n";
-    }
-}
-
-sub populateStats {
-    my ($self, $symbol) = @_;
-    my $sets = $self->{accountSets}{$symbol};
-    my ($firstPurchaseDate, $finalSaleDate, $totalRealized);
-    foreach my $set (@$sets) {
-        my $sale = $set->{sale};
-    }
-}
-
 
 
 
