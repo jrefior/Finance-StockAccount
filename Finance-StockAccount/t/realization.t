@@ -42,6 +42,7 @@ ok(my $at3 = Finance::StockAccount::AccountTransaction->new($initAt3), 'Created 
         acquisitions    => [$acquisition1, $acquisition2],
     };
     ok(my $realization = Finance::StockAccount::Realization->new($initRealization), 'Instantiated Realization object.');
+    is($realization->acquisitionCount(), 2, 'Received expected acquisition count.');
     ok($realization->realize(), 'Realized realization.');
     my $profit = $realization->realized();
     my $expectedReturn = $at1->cashEffect() + $at2->cashEffect + $at3->cashEffect();

@@ -51,11 +51,12 @@ use_ok('Finance::StockAccount::Set');
         commission      => 10,
     };
     ok(my $at1 = Finance::StockAccount::AccountTransaction->new($initAt1), 'Created account transaction 1.');
-    ok(my $at2 = Finance::StockAccount::AccountTransaction->new($initAt1), 'Created account transaction 2.');
-    ok(my $at3 = Finance::StockAccount::AccountTransaction->new($initAt1), 'Created account transaction 3.');
-    ok(my $at4 = Finance::StockAccount::AccountTransaction->new($initAt1), 'Created account transaction 4.');
+    ok(my $at2 = Finance::StockAccount::AccountTransaction->new($initAt2), 'Created account transaction 2.');
+    ok(my $at3 = Finance::StockAccount::AccountTransaction->new($initAt3), 'Created account transaction 3.');
+    ok(my $at4 = Finance::StockAccount::AccountTransaction->new($initAt4), 'Created account transaction 4.');
 
     ok(my $set = Finance::StockAccount::Set->new([$at2, $at4, $at3, $at1]), 'Instantiated new Set object.');
+    ok($set->printTransactionDates(), 'Print transaction dates.');
     ok($set->accountSales(), 'Accounted for sales.');
 
 }

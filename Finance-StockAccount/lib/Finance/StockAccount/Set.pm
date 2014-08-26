@@ -6,6 +6,7 @@ use strict;
 use warnings;
 
 use DateTime;
+use DateTime::Format::CLDR;
 
 use Finance::StockAccount::Realization;
 
@@ -24,6 +25,7 @@ sub new {
                 proceeds            => 0,
                 ROI                 => 0,
             },
+        cldr                => undef,
     };
     bless($self, $class);
     $init and $self->add($init);
@@ -80,10 +82,40 @@ sub cmpPrice {
            -1;
 }
 
+sub cldr {
+    my $self = shift;
+    my $cldr = $self->{cldr};
+    if (!$cldr) {
+        $cldr = new DateTime::Format::CLDR(
+            pattern     => 'yyyy-MM-dd',
+            locale      => 'en_US',
+        );
+        $self->{cldr} = $cldr;
+    }
+    return $cldr;
+}
+
 sub dateSort {
     my $self = shift;
     $self->{accountTransactions} = [sort { DateTime->compare($a->date(), $b->date()) } @{$self->{accountTransactions}}];
     $self->{dateSort} = 1;
+    return 1;
+}
+
+sub transactionDates {
+    my $self = shift;
+    my $transactionDates = [];
+    foreach my $at (@{$self->{accountTransactions}}) {
+        push(@$transactionDates, $at->{date});
+    }
+    return $transactionDates;
+}
+
+sub printTransactionDates {
+    my $self = shift;
+    my $transactionDates = $self->transactionDates();
+    my $cldr = $self->cldr();
+    print join(', ', map { $cldr->format_datetime($_) } @$transactionDates), "\n";
     return 1;
 }
 
@@ -99,7 +131,8 @@ sub accountPriorPurchase {
         stock           => $divestment->stock(),
         divestment      => $divestment,
     });
-    my @priorPurchases = sort { $self->cmpStPrice($a, $b) } grep { $_->possiblePurchase($actionString) } @{$accountTransactions}[0 .. $index];
+    
+    my @priorPurchases = sort { $self->cmpPrice($a, $b) } grep { $_->possiblePurchase($actionString) } @{$accountTransactions}[0 .. $index];
     foreach my $priorPurchase (@priorPurchases) {
         my $sharesDivested = $divestment->available();
         last unless $sharesDivested;
