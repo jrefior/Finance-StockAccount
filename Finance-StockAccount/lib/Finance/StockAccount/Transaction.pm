@@ -2,6 +2,8 @@ package Finance::StockAccount::Transaction;
 use Exporter 'import';
 @EXPORT_OK = qw(new);
 
+use Time::Moment;
+
 use Finance::StockAccount::Stock;
 
 use strict;
@@ -15,7 +17,7 @@ use constant COVER      => 3;
 sub new {
     my ($class, $init) = @_;
     my $self = {
-        date                => undef,
+        tm                  => undef,
         action              => undef,
         stock               => undef,
         quantity            => undef,
@@ -33,14 +35,28 @@ sub order {
     return qw(date action stock quantity price commission regulatoryFees otherFees);
 }
 
-sub date {
-    my ($self, $date) = @_;
-    if ($date) {
-        $self->{date} = $date;
-        return 1;
+sub dateString {
+    my ($self, $dateString) = @_;
+    if ($dateString) {
+        my $tm = Time::Moment->from_string($dateString);
+        if ($tm) {
+            $self->{tm} = $tm;
+            return 1;
+        }
+        else {
+            warn "Unable to create Time::Moment object from date string $dateString.\n";
+            return 0;
+        }
     }
     else {
-        return $self->{date};
+        my $tm = $self->{tm};
+        if ($tm) {
+            return $tm->to_string();
+        }
+        else {
+            warn "Time::Moment property not set.\n";
+            return undef;
+        }
     }
 }
 
@@ -204,6 +220,9 @@ sub set {
         elsif ($key eq 'exchange') {
             $self->exchange($init->{$key});
         }
+        elsif ($key eq 'dateString') {
+            $self->dateString($init->{$key});
+        }
         else {
             $status = 0;
             warn "Tried to set $key in StockAccount::Transaction object, but that's not a known key.\n";
@@ -305,9 +324,6 @@ sub printTransaction {
     my $self = shift;
     my $pattern = "%20s %-40s\n";
     foreach my $key ($self->order()) {
-        if ($key eq 'price') {
-            print "Trying to print price... ", $self->{price}, "\n";
-        }
         if (defined($self->{$key})) {
             if ($key eq 'stock') {
                 my $symbol = $self->symbol();
@@ -328,6 +344,11 @@ sub printTransaction {
                     $value = $self->{$key};
                 }
                 printf($pattern, $key, $value);
+            }
+        }
+        elsif ($key eq 'date') {
+            if ($self->{tm}) {
+                printf($pattern, $key, $self->dateString());
             }
         }
     }

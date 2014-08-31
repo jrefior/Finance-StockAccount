@@ -31,19 +31,19 @@ use_ok('Finance::StockAccount::Transaction');
     ok($st->set({commission => $commission}), 'Set commission value.');
     my $cashEffect = -1 * ($pn * $quant + $commission);
     is($st->cashEffect(), $cashEffect, 'Cash effect matches.');
-
-    ok($st->printTransaction(), 'Printed the transaction.');
 }
 
 
 {
     my $hash = {
+        dateString      => '20120131T120000Z',
         symbol          => 'AMD',
         price           => 4.05,
         quantity        => 500,
         action          => 'sell',
     };
     my $st = Finance::StockAccount::Transaction->new($hash);
+    ok($st->printTransaction(), 'Printed the transaction.');
     ok($st, 'Instantiated new transaction object using a hash of parameters.');
     ok($st->sell(), 'Initiated as sale action.');
     ok(!$st->buy(), 'Is therefore not a buy action.');
