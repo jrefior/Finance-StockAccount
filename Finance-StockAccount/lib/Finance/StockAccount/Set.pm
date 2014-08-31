@@ -119,6 +119,12 @@ sub printTransactionDates {
     return 1;
 }
 
+sub computeRoi {
+    my $self = shift;
+    $self->{stats}{ROI} = $self->{stats}{profit} / $self->{stats}{investment};
+    return 1;
+}
+
 sub accountPriorPurchase {
     my ($self, $index) = @_;
     if (!$self->{dateSort}) {
@@ -146,6 +152,10 @@ sub accountPriorPurchase {
     if ($realization->acquisitionCount()) {
         $realization->realize();
         push(@{$self->{realizations}}, $realization);
+        $self->{stats}{profit} += $realization->realized();
+        $self->{stats}{investment} += $realization->costBasis();
+        $self->{stats}{proceeds} += $realization->divestmentProceeds();
+        $self->computeRoi();
         return 1;
     }
     else {
@@ -173,6 +183,10 @@ sub accountSales {
     return $status;
 }
 
+sub profit              { return shift->{stats}{profit}                 };
+sub investment          { return shift->{stats}{investment}             };
+sub proceeds            { return shift->{stats}{proceeds}               };
+sub roi                 { return shift->{stats}{ROI}                    };
 
 
 1;

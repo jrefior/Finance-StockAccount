@@ -17,6 +17,7 @@ sub new {
         divestmentProceeds  => 0,
         costBasis           => 0,
         realized            => undef,
+        roi                 => undef,
     };
     bless($self, $class);
     $init and $self->set($init);
@@ -72,7 +73,10 @@ sub set {
 
 sub realize {
     my $self = shift;
-    $self->{realized} = $self->{divestmentProceeds} - $self->{costBasis};
+    my $costBasis = $self->{costBasis};
+    my $realized = $self->{divestmentProceeds} - $costBasis;
+    $self->{realized} = $realized;
+    $self->{roi} = $realized / $costBasis;
     return 1;
 }
 
@@ -81,10 +85,12 @@ sub acquisitionCount {
     return scalar(@{$self->{acquisitions}});
 }
 
-sub divestment          { return shift->{divestment};       }
-sub acquisitions        { return shift->{acquisitions};     }
-sub costBasis           { return shift->{costBasis};        }
-sub realized            { return shift->{realized};         }
+sub divestment          { return shift->{divestment};           }
+sub divestmentProceeds  { return shift->{divestmentProceeds};   }
+sub acquisitions        { return shift->{acquisitions};         }
+sub costBasis           { return shift->{costBasis};            }
+sub realized            { return shift->{realized};             }
+sub roi                 { return shift->{roi};                  }
 
 
 
