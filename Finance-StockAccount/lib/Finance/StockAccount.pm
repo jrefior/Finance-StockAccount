@@ -1,34 +1,75 @@
 package Finance::StockAccount;
 
-use 5.006;
 use strict;
-use warnings FATAL => 'all';
+use warnings;
+
+use Finance::StockAccount::Set;
+use Finance::StockAccount::AccountTransaction;
+use Finance::StockAccount::Stock;
 
 sub new {
     my ($class, $init) = @_;
     my $self = {
-
+        sets                => {},
     };
     bless($self, $class);
     $init and $self->set($init);
     return $self;
 }
 
-sub possiblePurchase {
-    my $self = shift;
-    return (($self->{action} eq 'Buy') && ($self->{quantity} > $self->{accounted})) ? 1 : 0;
-}
-
-sub accountedValue {
-    my $self = shift;
-    my $value = $self->{accounted} * $self->{price};
-    if ($self->isSale()) {
-        $value -= $self->{commission};
+sub getSet {
+    my ($self, $hashKey) = @_;
+    if (exists($self->{sets}{$hashKey})) {
+        return $self->{sets}{$hashKey};
     }
     else {
-        $value += $self->{commission};
+        return undef;
     }
-    return $value;
+}
+
+sub addToSet {
+    my ($self, $at) = @_;
+    if (ref($at) and ref($at) eq 'Finance::StockAccount::AccountTransaction') {
+        my $hashKey = $at->hashKey();
+        my $set = $self->getSet($hashKey);
+        if ($set) {
+            return $set->add([$at]);
+        }
+        else {
+            return Finance::StockAccount::Set->new([$at]);
+        }
+    }
+    else {
+        warn "Method addToSet requires a valid AccountTransaction object.\n";
+        return 0;
+    }
+}
+
+sub addAccountTransactions {
+    my ($self, $accountTransactions) = @_;
+    if (ref($accountTransactions) and ref($accountTransactions) eq 'ARRAY') {
+        my $added = 0;
+        foreach my $at (@$accountTransactions) {
+            $self->addToSet($at) and $added++;
+        }
+        return $added;
+    }
+    else {
+        warn "Method addAccountTransactions requiers a reference to an array of AccountTransaction objects.\n";
+        return 0;
+    }
+}
+
+sub stockTransaction {
+    my ($self, $init) = @_;
+    my $at = Finance::StockAccount::AccountTransaction->new($init);
+    if ($at) {
+        return $self->addToSet($at);
+    }
+    else {
+        warn "Unable to create AccountTransaction object with those parameters.\n";
+        return 0;
+    }
 }
 
 

@@ -64,6 +64,11 @@ sub possiblePurchase {
     }
 }
 
+sub hashKey {
+    my $self = shift;
+    my $stock = $self->stock();
+    return $stock->hashKey();
+}
 
 
 1;

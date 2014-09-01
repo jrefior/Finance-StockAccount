@@ -72,6 +72,23 @@ sub same {
     }
 }
 
+sub hashKey {
+    my $self = shift;
+    my $symbol = $self->{symbol};
+    my $exchange = $self->{exchange};
+    if ($symbol and $exchange) {
+        return "$symbol:$exchange";
+    }
+    elsif ($symbol) {
+        return $symbol;
+    }
+    else {
+        warn "Cannot generate hash key when stock symbol not set.\n";
+        return undef;
+    }
+}
+
+
 
 1;
 
