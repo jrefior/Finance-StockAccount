@@ -35,6 +35,24 @@ sub order {
     return qw(date action stock quantity price commission regulatoryFees otherFees);
 }
 
+sub tm { # Time::Moment object getter/setter
+    my ($self, $tm) = @_;
+    if ($tm) {
+        if (ref($tm) and ref($tm) eq 'Time::Moment') {
+            $self->{tm} = $tm;
+            return 1;
+        }
+        else {
+            "$tm not a valid Time::Moment object.\n";
+            return 0;
+        }
+    }
+    else {
+        return $self->{tm};
+    }
+}
+
+
 sub dateString {
     my ($self, $dateString) = @_;
     if ($dateString) {
