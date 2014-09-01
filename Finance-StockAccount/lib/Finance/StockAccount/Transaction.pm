@@ -43,7 +43,7 @@ sub tm { # Time::Moment object getter/setter
             return 1;
         }
         else {
-            "$tm not a valid Time::Moment object.\n";
+            warn "$tm not a valid Time::Moment object.\n";
             return 0;
         }
     }
@@ -227,6 +227,9 @@ sub set {
         if (exists($self->{$key})) {
             if ($key eq 'action') {
                 $self->action($init->{$key});
+            }
+            elsif ($key eq 'tm') {
+                $self->tm($init->{$key});
             }
             else {
                 $self->{$key} = $init->{$key};
