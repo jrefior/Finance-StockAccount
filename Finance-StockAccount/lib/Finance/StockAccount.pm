@@ -11,6 +11,16 @@ sub new {
     my ($class, $init) = @_;
     my $self = {
         sets                => {},
+        stats               => {
+            stale               => 1,
+            startDate           => undef,
+            endDate             => undef,
+            investment          => undef,
+            profit              => undef,
+            ROI                 => undef,
+            meanAnnualProfit    => undef,
+            meanAnnualROI       => undef,
+        },
     };
     bless($self, $class);
     $init and $self->set($init);
@@ -32,14 +42,17 @@ sub addToSet {
     if (ref($at) and ref($at) eq 'Finance::StockAccount::AccountTransaction') {
         my $hashKey = $at->hashKey();
         my $set = $self->getSet($hashKey);
+        my $status;
         if ($set) {
-            return $set->add([$at]);
+            $status = $set->add([$at]);
         }
         else {
             $set = Finance::StockAccount::Set->new([$at]);
             $self->{sets}{$hashKey} = $set;
-            return $set;
+            $status = $set;
         }
+        $status and $self->{stale} = 1;
+        return $status;
     }
     else {
         warn "Method addToSet requires a valid AccountTransaction object.\n";
@@ -74,7 +87,7 @@ sub stockTransaction {
     }
 }
 
-sub stale {
+sub staleSets {
     my $self = shift;
     my $stale = 0;
     foreach my $hashKey (keys %{$self->{sets}}) {
@@ -84,27 +97,7 @@ sub stale {
     return $stale;
 }
 
-sub ROI {
-    my $self = shift;
-    my ($investment, $profit) = (0, 0);
-    foreach my $hashKey (keys %{$self->{sets}}) {
-        my $set = $self->{sets}{$hashKey};
-        if ($set->stale()) {
-            $set->accountSales();
-        }
-        $investment += $set->investment();
-        $profit     += $set->profit();
-    }
-    if ($investment) {
-        return $profit / $investment;
-    }
-    else {
-        warn "No investment found on which to compute ROI.\n";
-        return 0;
-    }
-}
-
-sub meanAnnualROI {
+sub calculateStats {
     my $self = shift;
     my ($investment, $profit) = (0, 0);
     my ($startDate, $endDate);
@@ -131,14 +124,56 @@ sub meanAnnualROI {
         }
     }
     if ($investment) {
+        my $ROI = $profit / $investment;
+        $self->{stats}{investment} = $investment;
+        $self->{stats}{profit} = $profit;
+        $self->{stats}{ROI} = $ROI;
+        $self->{stats}{startDate} = $startDate;
+        $self->{stats}{endDate} = $startDate;
         my $secondsInYear = 60 * 60 * 24 * 365.25;
         my $secondsInAccount = $endDate->epoch() - $startDate->epoch();
-        return ($profit / $investment) * ($secondsInYear / $secondsInAccount);
+        my $annualRatio = $secondsInYear / $secondsInAccount;
+        $self->{stats}{meanAnnualProfit} = $profit * $annualRatio;
+        $self->{stats}{meanAnnualROI} = $ROI * $annualRatio;
+        $self->{stats}{stale} = 0;
+        return 1;
     }
     else {
-        warn "No investment found on which to compute ROI.\n";
+        warn "No investment found on which to compute stats.\n";
         return 0;
     }
+}
+
+sub getStats {
+    my $self = shift;
+    if ($self->{stats}{stale} or $self->staleSets()) {
+        $self->calculateStats();
+    }
+    return 1;
+}
+
+sub profit {
+    my $self = shift;
+    $self->getStats();
+    return $self->{stats}{profit};
+}
+
+sub meanAnnualProfit {
+    my $self = shift;
+    $self->getStats();
+    return $self->{stats}{meanAnnualProfit};
+}
+
+sub ROI {
+    my $self = shift;
+    $self->getStats();
+    return $self->{stats}{ROI};
+}
+
+sub meanAnnualROI {
+    my $self = shift;
+    $self->getStats();
+    return $self->{stats}{meanAnnualROI};
 }
 
 

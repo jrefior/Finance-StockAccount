@@ -45,6 +45,8 @@ ok(my $sa = Finance::StockAccount->new(), 'Instantiated new StockAccount object.
     ok($sa->addAccountTransactions([$at]), 'Added $at object.');
     ok($sa->stockTransaction($atHash3), 'Added new stock transaction (3).');
     ok($sa->stockTransaction($atHash4), 'Added new stock transaction (4).');
+    is($sa->profit(), 564, 'Got expected profit.');
+    ok($sa->meanAnnualProfit() =~ /^595\./, 'Got expected mean annual profit.');
     ok(my $roi = $sa->ROI(), 'Calculate Return on Investment.');
     ok($roi =~ /^0\.112/, 'Got expected ROI.');
     ok(my $maroi = $sa->meanAnnualROI(), 'Calculate mean annual ROI.');
