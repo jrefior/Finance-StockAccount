@@ -126,14 +126,13 @@ sub meanAnnualROI {
         if (!$endDate) {
             $endDate = $setEnd;
         }
-        elsif ($setEnd < $endDate) {
+        elsif ($setEnd > $endDate) {
             $endDate = $setEnd;
         }
     }
     if ($investment) {
         my $secondsInYear = 60 * 60 * 24 * 365.25;
         my $secondsInAccount = $endDate->epoch() - $startDate->epoch();
-        warn "Seconds in account: $secondsInAccount - as days: ", $secondsInAccount / 60 / 60 / 24;
         return ($profit / $investment) * ($secondsInYear / $secondsInAccount);
     }
     else {

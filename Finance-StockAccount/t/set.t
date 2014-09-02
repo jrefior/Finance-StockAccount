@@ -9,6 +9,8 @@ use_ok('Finance::StockAccount::Set');
 {
 
     ok(my $tm1 = Time::Moment->from_string("20120131T000000Z"), 'Instantiated tm1 Time::Moment object.');
+    ok(my $tm4 = Time::Moment->from_string("20120819T000000Z"), 'Instantiated tm4 Time::Moment object.');
+    ok(my $tm5 = Time::Moment->from_string("20120921T000000Z"), 'Instantiated tm5 Time::Moment object.');
 
     my $initAt1 = {
         symbol          => 'AMD',
@@ -36,7 +38,7 @@ use_ok('Finance::StockAccount::Set');
     };
     my $initAt4 = {
         symbol          => 'AMD',
-        dateString      => "20120819T000000Z",
+        dateString      => $tm4,
         action          => 'sell',
         price           => 4.05,
         quantity        => 1000,
@@ -44,7 +46,7 @@ use_ok('Finance::StockAccount::Set');
     };
     my $initAt5 = {
         symbol          => 'AMD',
-        dateString      => "20120921T000000Z",
+        dateString      => $tm5,
         action          => 'buy',
         price           => 3.89,
         quantity        => 200,
@@ -64,6 +66,8 @@ use_ok('Finance::StockAccount::Set');
     is($set->proceeds(), 4040, 'Benefit (proceeds) as expected.');
     is($set->profit(), 367, 'Profit as expected.');
     ok($set->roi() =~ /^0\.0999/, 'ROI as expected.');
+    ok($set->startDate() == $tm1, 'Got expected start date.');
+    ok($set->endDate() == $tm4, 'Got expected end date.');
 
 }
 
