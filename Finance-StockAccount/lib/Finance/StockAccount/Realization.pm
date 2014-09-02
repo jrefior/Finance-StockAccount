@@ -5,6 +5,8 @@ use Exporter 'import';
 use strict;
 use warnings;
 
+use Time::Moment;
+
 use Finance::StockAccount::AccountTransaction;
 use Finance::StockAccount::Acquisition;
 
@@ -83,6 +85,29 @@ sub realize {
 sub acquisitionCount {
     my $self = shift;
     return scalar(@{$self->{acquisitions}});
+}
+
+sub startDate {
+    my $self = shift;
+    my $startDate;
+    foreach my $acquisition (@{$self->{acquisitions}}) {
+        if (!$startDate) {
+            $startDate = $acquisition->tm();
+        }
+        else {
+            my $tm = $acquisition->tm();
+            if ($tm < $startDate) {
+                $startDate = $tm;
+            }
+        }
+    }
+    return $startDate;
+}
+
+sub endDate {
+    my $self = shift;
+    my $divestment = $self->{divestment};
+    return $divestment->tm();
 }
 
 sub divestment          { return shift->{divestment};           }

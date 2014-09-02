@@ -36,7 +36,9 @@ sub addToSet {
             return $set->add([$at]);
         }
         else {
-            return Finance::StockAccount::Set->new([$at]);
+            $set = Finance::StockAccount::Set->new([$at]);
+            $self->{sets}{$hashKey} = $set;
+            return $set;
         }
     }
     else {
@@ -71,6 +73,76 @@ sub stockTransaction {
         return 0;
     }
 }
+
+sub stale {
+    my $self = shift;
+    my $stale = 0;
+    foreach my $hashKey (keys %{$self->{sets}}) {
+        my $set = $self->{sets}{$hashKey};
+        $stale += $set->stale();
+    }
+    return $stale;
+}
+
+sub ROI {
+    my $self = shift;
+    my ($investment, $profit) = (0, 0);
+    foreach my $hashKey (keys %{$self->{sets}}) {
+        my $set = $self->{sets}{$hashKey};
+        if ($set->stale()) {
+            $set->accountSales();
+        }
+        $investment += $set->investment();
+        $profit     += $set->profit();
+    }
+    if ($investment) {
+        return $profit / $investment;
+    }
+    else {
+        warn "No investment found on which to compute ROI.\n";
+        return 0;
+    }
+}
+
+sub meanAnnualROI {
+    my $self = shift;
+    my ($investment, $profit) = (0, 0);
+    my ($startDate, $endDate);
+    foreach my $hashKey (keys %{$self->{sets}}) {
+        my $set = $self->{sets}{$hashKey};
+        if ($set->stale()) {
+            $set->accountSales();
+        }
+        $investment += $set->investment();
+        $profit     += $set->profit();
+        my $setStart = $set->startDate();
+        if (!$startDate) {
+            $startDate = $setStart;
+        }
+        elsif ($setStart < $startDate) {
+            $startDate = $setStart;
+        }
+        my $setEnd   = $set->endDate();
+        if (!$endDate) {
+            $endDate = $setEnd;
+        }
+        elsif ($setEnd < $endDate) {
+            $endDate = $setEnd;
+        }
+    }
+    if ($investment) {
+        my $secondsInYear = 60 * 60 * 24 * 365.25;
+        my $secondsInAccount = $endDate->epoch() - $startDate->epoch();
+        warn "Seconds in account: $secondsInAccount - as days: ", $secondsInAccount / 60 / 60 / 24;
+        return ($profit / $investment) * ($secondsInYear / $secondsInAccount);
+    }
+    else {
+        warn "No investment found on which to compute ROI.\n";
+        return 0;
+    }
+}
+
+
 
 
 =head1 NAME

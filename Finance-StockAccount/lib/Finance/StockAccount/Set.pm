@@ -23,6 +23,8 @@ sub new {
                 investment          => 0,
                 proceeds            => 0,
                 ROI                 => 0,
+                startDate           => undef,
+                endDate             => undef,
             },
     };
     bless($self, $class);
@@ -131,6 +133,7 @@ sub accountPriorPurchase {
             my $acquisition = Finance::StockAccount::Acquisition->new($priorPurchase, $accounted);
             $realization->addAcquisition($acquisition);
             $divestment->accountShares($accounted);
+            $self->startDate($priorPurchase->tm());
         }
     }
     if ($realization->acquisitionCount()) {
@@ -161,11 +164,56 @@ sub accountSales {
         if ($at->sell() or $at->short()) {
             if ($at->available()) {
                 $status += $self->accountPriorPurchase($x);
+                $self->endDate($at->tm());
             }
         }
     }
+    $self->stale(0);
     return $status;
 }
+
+sub startDate {
+    my ($self, $tm) = @_;
+    my $startDate = $self->{stats}{startDate};
+    if ($tm) {
+        if (!$startDate) {
+            $self->{stats}{startDate} = $tm;
+            return 1;
+        }
+        elsif ($tm < $startDate) {
+            $self->{stats}{startDate} = $tm;
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    }
+    else {
+        return $startDate;
+    }
+}
+
+sub endDate {
+    my ($self, $tm) = @_;
+    my $endDate = $self->{stats}{endDate};
+    if ($tm) {
+        if (!$endDate) {
+            $self->{stats}{endDate} = $tm;
+            return 1;
+        }
+        elsif ($tm > $endDate) {
+            $self->{stats}{endDate} = $tm;
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    }
+    else {
+        return $endDate;
+    }
+}
+
 
 sub profit              { return shift->{stats}{profit}                 };
 sub investment          { return shift->{stats}{investment}             };
