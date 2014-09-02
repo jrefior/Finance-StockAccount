@@ -1,18 +1,19 @@
 package Finance::StockAccount::Import;
 
-use 5.006;
 use strict;
-use warnings FATAL => 'all';
+use warnings;
 
-use Finance::StockAccount::Transaction;
+use Finance::StockAccount;
+use Finance::StockAccount::AccountTransaction;
 
 sub new {
-    my ($class, $file) = @_;
+    my ($class, $file, $tzoffset) = @_;
     $file or die "Please pass a file to import.\n";
     my $self = {
         file                => $file,
         fh                  => undef,
         headers             => undef,
+        tzoffset            => $tzoffset || 0,
     };
     return bless($self, $class);
 }
@@ -72,5 +73,30 @@ sub extractSymbol {
         return 0;
     }
 }
+
+sub nextAt {
+    # method that returns the next AccountTransaction object,
+    # to be overridden by child classes
+    return 0;
+}
+
+sub stockAccount {
+    my $self = shift;
+    my $sa = Finance::StockAccount->new();
+    while (my $at = $self->nextAt()) {
+        $sa->addToSet($at);
+    }
+    return $sa;
+}
+
+
+
+
+
+
+
+
+
+
 
 1;

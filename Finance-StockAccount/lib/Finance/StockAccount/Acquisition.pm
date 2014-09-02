@@ -42,6 +42,12 @@ sub cashEffect         { return shift->{cashEffect};         }
 sub feesAndCommissions { return shift->{feesAndCommissions}; }
 sub shares             { return shift->{shares};             }
 
+sub tm {
+    my $self = shift;
+    my $at = $self->{at};
+    return $at->tm();
+}
+
 sub proportion {
     my $self = shift;
     my $shares = $self->{shares};

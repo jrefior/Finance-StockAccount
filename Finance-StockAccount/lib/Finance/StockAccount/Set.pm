@@ -16,6 +16,7 @@ sub new {
         stock               => undef,
         accountTransactions => [],
         realizations        => [],
+        success             => 0,
         stats               =>
             {
                 stale               => 1,
@@ -133,16 +134,18 @@ sub accountPriorPurchase {
             my $acquisition = Finance::StockAccount::Acquisition->new($priorPurchase, $accounted);
             $realization->addAcquisition($acquisition);
             $divestment->accountShares($accounted);
-            $self->startDate($priorPurchase->tm());
         }
     }
     if ($realization->acquisitionCount()) {
         $realization->realize();
         push(@{$self->{realizations}}, $realization);
+        $self->startDate($realization->startDate());
+        $self->endDate($realization->endDate());
         $self->{stats}{profit} += $realization->realized();
         $self->{stats}{investment} += $realization->costBasis();
         $self->{stats}{proceeds} += $realization->divestmentProceeds();
         $self->computeRoi();
+        $self->{success} = 1;
         return 1;
     }
     else {
@@ -164,7 +167,6 @@ sub accountSales {
         if ($at->sell() or $at->short()) {
             if ($at->available()) {
                 $status += $self->accountPriorPurchase($x);
-                $self->endDate($at->tm());
             }
         }
     }
@@ -219,6 +221,7 @@ sub profit              { return shift->{stats}{profit}                 };
 sub investment          { return shift->{stats}{investment}             };
 sub proceeds            { return shift->{stats}{proceeds}               };
 sub roi                 { return shift->{stats}{ROI}                    };
+sub success             { return shift->{success}                       };
 
 
 1;

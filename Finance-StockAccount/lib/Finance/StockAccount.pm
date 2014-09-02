@@ -8,9 +8,10 @@ use Finance::StockAccount::AccountTransaction;
 use Finance::StockAccount::Stock;
 
 sub new {
-    my ($class, $init) = @_;
+    my $class = shift;
     my $self = {
         sets                => {},
+        skipStocks          => [],
         stats               => {
             stale               => 1,
             startDate           => undef,
@@ -22,9 +23,7 @@ sub new {
             meanAnnualROI       => undef,
         },
     };
-    bless($self, $class);
-    $init and $self->set($init);
-    return $self;
+    return bless($self, $class);
 }
 
 sub getSet {
@@ -87,6 +86,12 @@ sub stockTransaction {
     }
 }
 
+sub skipStocks {
+    my ($self, $skipStocks) = @_;
+    push(@{$self->{skipStocks}}, @$skipStocks);
+    return 1;
+}
+
 sub staleSets {
     my $self = shift;
     my $stale = 0;
@@ -102,14 +107,18 @@ sub calculateStats {
     my ($investment, $profit) = (0, 0);
     my ($startDate, $endDate);
     foreach my $hashKey (keys %{$self->{sets}}) {
+        next if grep { $_ eq $hashKey } @{$self->{skipStocks}};
         my $set = $self->{sets}{$hashKey};
         if ($set->stale()) {
             $set->accountSales();
+            next unless $set->success();
         }
+        print "Calculating stats for $hashKey...\n";
         $investment += $set->investment();
         $profit     += $set->profit();
         my $setStart = $set->startDate();
-        if (!$startDate) {
+        $setStart or die "Didn't get set startDate for hashkey $hashKey\n";
+        if (!defined($startDate)) {
             $startDate = $setStart;
         }
         elsif ($setStart < $startDate) {
