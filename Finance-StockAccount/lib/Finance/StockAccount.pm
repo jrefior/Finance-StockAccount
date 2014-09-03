@@ -18,7 +18,7 @@ sub new {
             endDate             => undef,
             investment          => undef,
             profit              => undef,
-            ROI                 => undef,
+            meanROI             => undef,
             meanAnnualProfit    => undef,
             meanAnnualROI       => undef,
         },
@@ -30,6 +30,28 @@ sub getSet {
     my ($self, $hashKey) = @_;
     if (exists($self->{sets}{$hashKey})) {
         return $self->{sets}{$hashKey};
+    }
+    else {
+        return undef;
+    }
+}
+
+sub getSetFiltered {
+    my ($self, $hashKey) = @_;
+    if (grep { $_ eq $hashKey } @{$self->{skipStocks}}) {
+        return undef;
+    }
+    elsif (exists($self->{sets}{$hashKey})) {
+        my $set = $self->{sets}{$hashKey};
+        if ($set->stale()) {
+            $set->accountSales();
+        }
+        if ($set->realizationCount() > 0) {
+            return $set;
+        }
+        else {
+            return undef;
+        }
     }
     else {
         return undef;
@@ -96,8 +118,10 @@ sub staleSets {
     my $self = shift;
     my $stale = 0;
     foreach my $hashKey (keys %{$self->{sets}}) {
-        my $set = $self->{sets}{$hashKey};
-        $stale += $set->stale();
+        my $set = $self->getSet($hashKey);
+        if ($set) {
+            $stale += $set->stale();
+        }
     }
     return $stale;
 }
@@ -106,50 +130,59 @@ sub calculateStats {
     my $self = shift;
     my ($investment, $profit) = (0, 0);
     my ($startDate, $endDate);
+    my $setCount = 0;
     foreach my $hashKey (keys %{$self->{sets}}) {
-        next if grep { $_ eq $hashKey } @{$self->{skipStocks}};
-        my $set = $self->{sets}{$hashKey};
-        if ($set->stale()) {
-            $set->accountSales();
-            next unless $set->success();
-        }
-        print "Calculating stats for $hashKey...\n";
-        $investment += $set->investment();
-        $profit     += $set->profit();
-        my $setStart = $set->startDate();
-        $setStart or die "Didn't get set startDate for hashkey $hashKey\n";
-        if (!defined($startDate)) {
-            $startDate = $setStart;
-        }
-        elsif ($setStart < $startDate) {
-            $startDate = $setStart;
-        }
-        my $setEnd   = $set->endDate();
-        if (!$endDate) {
-            $endDate = $setEnd;
-        }
-        elsif ($setEnd > $endDate) {
-            $endDate = $setEnd;
+        my $set = $self->getSetFiltered($hashKey);
+        if ($set) {
+            if ($set->stale()) {
+                $set->accountSales();
+                next unless $set->success();
+            }
+            print "Calculating stats for $hashKey...\n";
+            $investment += $set->investment();
+            $profit     += $set->profit();
+            my $setStart = $set->startDate();
+            $setStart or die "Didn't get set startDate for hashkey $hashKey\n";
+            if (!defined($startDate)) {
+                $startDate = $setStart;
+            }
+            elsif ($setStart < $startDate) {
+                $startDate = $setStart;
+            }
+            my $setEnd   = $set->endDate();
+            if (!$endDate) {
+                $endDate = $setEnd;
+            }
+            elsif ($setEnd > $endDate) {
+                $endDate = $setEnd;
+            }
+            $setCount++;
         }
     }
-    if ($investment) {
-        my $ROI = $profit / $investment;
-        $self->{stats}{investment} = $investment;
-        $self->{stats}{profit} = $profit;
-        $self->{stats}{ROI} = $ROI;
-        $self->{stats}{startDate} = $startDate;
-        $self->{stats}{endDate} = $startDate;
-        my $secondsInYear = 60 * 60 * 24 * 365.25;
-        my $secondsInAccount = $endDate->epoch() - $startDate->epoch();
-        my $annualRatio = $secondsInYear / $secondsInAccount;
-        $self->{stats}{meanAnnualProfit} = $profit * $annualRatio;
-        $self->{stats}{meanAnnualROI} = $ROI * $annualRatio;
-        $self->{stats}{stale} = 0;
-        return 1;
+    if ($setCount > 0) {
+        if ($investment) {
+            my $meanROI = $profit / $investment;
+            $self->{stats}{investment} = $investment;
+            $self->{stats}{profit} = $profit;
+            $self->{stats}{meanROI} = $meanROI;
+            $self->{stats}{startDate} = $startDate;
+            $self->{stats}{endDate} = $startDate;
+            my $secondsInYear = 60 * 60 * 24 * 365.25;
+            my $secondsInAccount = $endDate->epoch() - $startDate->epoch();
+            my $annualRatio = $secondsInYear / $secondsInAccount;
+            $self->{stats}{meanAnnualProfit} = $profit * $annualRatio;
+            $self->{stats}{meanAnnualROI} = $meanROI * $annualRatio;
+            $self->{stats}{stale} = 0;
+            return 1;
+        }
+        else {
+            warn "No investment found on which to compute stats.\n";
+            return 0;
+        }
     }
     else {
-        warn "No investment found on which to compute stats.\n";
-        return 0;
+        print "No realized gains in stock account.\n";
+        return 1;
     }
 }
 
@@ -173,10 +206,10 @@ sub meanAnnualProfit {
     return $self->{stats}{meanAnnualProfit};
 }
 
-sub ROI {
+sub meanROI {
     my $self = shift;
     $self->getStats();
-    return $self->{stats}{ROI};
+    return $self->{stats}{meanROI};
 }
 
 sub meanAnnualROI {

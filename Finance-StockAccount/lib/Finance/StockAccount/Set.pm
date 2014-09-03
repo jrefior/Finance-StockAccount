@@ -33,6 +33,11 @@ sub new {
     return $self;
 }
 
+sub realizationCount {
+    my $self = shift;
+    return scalar(@{$self->{realizations}});
+}
+
 sub stale {
     my ($self, $assertion) = @_;
     if (defined($assertion)) {
