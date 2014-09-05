@@ -137,7 +137,7 @@ sub accountPriorPurchase {
         my $accounted = $priorPurchase->accountShares($sharesDivested);
         if ($accounted) {
             my $acquisition = Finance::StockAccount::Acquisition->new($priorPurchase, $accounted);
-            $realization->addAcquisition($acquisition);
+            $realization->addAcquisition($acquisition, $accounted);
             $divestment->accountShares($accounted);
         }
     }
@@ -148,7 +148,7 @@ sub accountPriorPurchase {
         $self->endDate($realization->endDate());
         $self->{stats}{profit} += $realization->realized();
         $self->{stats}{investment} += $realization->costBasis();
-        $self->{stats}{proceeds} += $realization->divestmentProceeds();
+        $self->{stats}{proceeds} += $realization->proceeds();
         $self->computeRoi();
         $self->{success} = 1;
         return 1;
@@ -227,6 +227,7 @@ sub investment          { return shift->{stats}{investment}             };
 sub proceeds            { return shift->{stats}{proceeds}               };
 sub roi                 { return shift->{stats}{ROI}                    };
 sub success             { return shift->{success}                       };
+sub realizations        { return shift->{realizations}                  };
 
 
 1;

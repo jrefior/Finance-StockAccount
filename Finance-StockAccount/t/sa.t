@@ -49,8 +49,6 @@ ok(my $sa = Finance::StockAccount->new(), 'Instantiated new StockAccount object.
     ok($sa->meanAnnualProfit() =~ /^595\./, 'Got expected mean annual profit.');
     ok(my $meanRoi = $sa->meanROI(), 'Calculate Return on Investment.');
     ok($meanRoi =~ /^0\.112/, 'Got expected ROI.');
-    ok(my $maroi = $sa->meanAnnualROI(), 'Calculate mean annual ROI.');
-    ok($maroi =~ /^0\.119/, 'Got expected mean annual ROI.');
 }
 
 

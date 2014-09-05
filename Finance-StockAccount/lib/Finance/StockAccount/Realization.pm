@@ -16,8 +16,7 @@ sub new {
         stock               => undef,
         divestment          => undef,
         acquisitions        => [],
-        divestmentProceeds  => 0,
-        costBasis           => 0,
+        divestedShares      => 0,
         realized            => undef,
         roi                 => undef,
     };
@@ -27,9 +26,9 @@ sub new {
 }
 
 sub addAcquisition {
-    my ($self, $acquisition) = @_;
+    my ($self, $acquisition, $shares) = @_;
     push(@{$self->{acquisitions}}, $acquisition);
-    $self->{costBasis} -= $acquisition->cashEffect();
+    $self->{divestedShares} += $shares;
     return 1;
 }
 
@@ -42,27 +41,18 @@ sub set {
                 my $divestment = $init->{$key};
                 if ($divestment and ref($divestment)) {
                     $self->{divestment} = $divestment;
-                    $self->{divestmentProceeds} = $divestment->cashEffect();
                 }
                 else {
                     $status = 0;
                     warn "Invalid divestment value in Realization intialization hash.\n";
                 }
             }
-            elsif ($key eq 'acquisitions') {
-                my $acquisitions = $init->{$key};
-                if (ref($acquisitions) and 'ARRAY' eq ref($acquisitions)) {
-                    foreach my $acquisition (@$acquisitions) {
-                        $self->addAcquisition($acquisition);
-                    }
-                }
-                else {
-                    $status = 0;
-                    warn "In Realized init, acquisitions value should be a ref to an array of Acquisition objects.\n";
-                }
+            elsif ($key eq 'stock') {
+                $self->{$key} = $init->{$key};
             }
             else {
-                $self->{$key} = $init->{$key};
+                $status = 0;
+                warn "Unable to initialize Realization object with $key parameter.\n";
             }
         }
         else {
@@ -73,13 +63,38 @@ sub set {
     return $status;
 }
 
+sub costBasis {
+    my $self = shift;
+    my $costBasis = 0;
+    foreach my $acquisition (@{$self->{acquisitions}}) {
+        $costBasis -= $acquisition->cashEffect();
+    }
+    return $costBasis;
+}
+
+sub proceeds {
+    my $self = shift;
+    my $divestment = $self->{divestment};
+    my $shares = $self->{divestedShares};
+    my $ratio = $shares / $divestment->quantity();
+    my $feesAndCommissions = $ratio * $divestment->feesAndCommissions();
+    return $divestment->price() * $shares - $feesAndCommissions;
+}
+
 sub realize {
     my $self = shift;
-    my $costBasis = $self->{costBasis};
-    my $realized = $self->{divestmentProceeds} - $costBasis;
+    my $costBasis = $self->costBasis();
+    my $proceeds = $self->proceeds();
+    my $realized = $proceeds - $costBasis;
     $self->{realized} = $realized;
-    $self->{roi} = $realized / $costBasis;
-    return 1;
+    if ($costBasis) {
+        $self->{roi} = $realized / $costBasis;
+        return 1;
+    }
+    else {
+        warn "Realize method finds no cost basis upon which to compute ROI.\n";
+        return 0;
+    }
 }
 
 sub acquisitionCount {
@@ -111,9 +126,7 @@ sub endDate {
 }
 
 sub divestment          { return shift->{divestment};           }
-sub divestmentProceeds  { return shift->{divestmentProceeds};   }
 sub acquisitions        { return shift->{acquisitions};         }
-sub costBasis           { return shift->{costBasis};            }
 sub realized            { return shift->{realized};             }
 sub roi                 { return shift->{roi};                  }
 

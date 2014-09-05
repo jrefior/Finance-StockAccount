@@ -20,7 +20,6 @@ sub new {
             profit              => undef,
             meanROI             => undef,
             meanAnnualProfit    => undef,
-            meanAnnualROI       => undef,
         },
     };
     return bless($self, $class);
@@ -131,6 +130,7 @@ sub calculateStats {
     my ($investment, $profit) = (0, 0);
     my ($startDate, $endDate);
     my $setCount = 0;
+    my @allRealizedSets = ();
     foreach my $hashKey (keys %{$self->{sets}}) {
         my $set = $self->getSetFiltered($hashKey);
         if ($set) {
@@ -138,9 +138,10 @@ sub calculateStats {
                 $set->accountSales();
                 next unless $set->success();
             }
-            print "Calculating stats for $hashKey...\n";
             $investment += $set->investment();
             $profit     += $set->profit();
+
+            ### Dates
             my $setStart = $set->startDate();
             $setStart or die "Didn't get set startDate for hashkey $hashKey\n";
             if (!defined($startDate)) {
@@ -171,7 +172,6 @@ sub calculateStats {
             my $secondsInAccount = $endDate->epoch() - $startDate->epoch();
             my $annualRatio = $secondsInYear / $secondsInAccount;
             $self->{stats}{meanAnnualProfit} = $profit * $annualRatio;
-            $self->{stats}{meanAnnualROI} = $meanROI * $annualRatio;
             $self->{stats}{stale} = 0;
             return 1;
         }
@@ -211,13 +211,6 @@ sub meanROI {
     $self->getStats();
     return $self->{stats}{meanROI};
 }
-
-sub meanAnnualROI {
-    my $self = shift;
-    $self->getStats();
-    return $self->{stats}{meanAnnualROI};
-}
-
 
 
 
