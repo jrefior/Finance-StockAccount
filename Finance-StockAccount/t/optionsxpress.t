@@ -10,6 +10,7 @@ my $allFile2014 = 'dlAllActivity201409.csv';
 my $esiFile    = 'dlEsiActivity.csv';
 my $eaFile    = 'dlEaActivity.csv';
 my $aepFile    = 'dlAepActivity.csv';
+my $amdFile    = 'dlAmdActivity.csv';
 
 {
     my $ox = Finance::StockAccount::Import::OptionsXpress->new($aaplFile, -240);
@@ -50,17 +51,29 @@ my $aepFile    = 'dlAepActivity.csv';
 }
 
 {
+    ok(my $ox = Finance::StockAccount::Import::OptionsXpress->new($amdFile, -240), 'Created new OX object for AMD activity.');
+    ok(my $sa = $ox->stockAccount(), 'Read file into stock account object.');
+    is($sa->profit(), 2803.63, 'Got expected profit for all AMD transactions.');
+    is($sa->minInvestment(), 6888.01, 'Got expected minimum cash investment that was required to reach that profit.');
+}
+
+
+{
     ok(my $ox = Finance::StockAccount::Import::OptionsXpress->new($allFile2014, -240), 'Created new OX object for all activity as of September 2014.');
     ok(my $sa = $ox->stockAccount(), 'Read file into stock account object.');
     # ok($sa->skipStocks([qw(AB BAC AET FTR AEP GOOG GOOGL NVDA S)]), 'Added skip stock hashkeys.');
     ok(my $profit = $sa->profit(), 'Got profit.');
-    ok(my $meanROI = $sa->meanROI(), 'Got ROI.');
+    ok(my $investment = $sa->minInvestment(), 'Got minimum cash investment required to achieve this profit.');
+    ok(my $ROI = $sa->ROI(), 'Got ROI.');
     ok(my $meanAnnualProfit = $sa->meanAnnualProfit(), 'Got mean annual profit.');
+    ok(my $meanAnnualROI = $sa->meanAnnualROI(), 'Got mean annual ROI.');
 
     my $pattern = "%30s: %10s\n";
+    printf($pattern, 'Investment', $investment);
     printf($pattern, 'Profit', $profit);
-    printf($pattern, 'Mean ROI', $meanROI);
+    printf($pattern, 'ROI', $ROI);
     printf($pattern, 'Mean Annual Profit', $meanAnnualProfit);
+    printf($pattern, 'Mean annual ROI', $meanAnnualROI);
 }
 
 

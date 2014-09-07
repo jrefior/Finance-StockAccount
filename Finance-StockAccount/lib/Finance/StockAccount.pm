@@ -17,8 +17,11 @@ sub new {
             startDate           => undef,
             endDate             => undef,
             investment          => undef,
+            minInvestment       => undef,
             profit              => undef,
-            meanROI             => undef,
+            ROI                 => undef,
+            meanAnnualROI       => undef,
+            roiPerRealization   => undef,
             meanAnnualProfit    => undef,
         },
     };
@@ -87,6 +90,7 @@ sub addAccountTransactions {
         foreach my $at (@$accountTransactions) {
             $self->addToSet($at) and $added++;
         }
+        $added and $self->{stats}{stale} = 1;
         return $added;
     }
     else {
@@ -130,7 +134,7 @@ sub calculateStats {
     my ($investment, $profit) = (0, 0);
     my ($startDate, $endDate);
     my $setCount = 0;
-    my @allRealizedSets = ();
+    my @allRealizations = ();
     foreach my $hashKey (keys %{$self->{sets}}) {
         my $set = $self->getSetFiltered($hashKey);
         if ($set) {
@@ -138,10 +142,14 @@ sub calculateStats {
                 $set->accountSales();
                 next unless $set->success();
             }
+            ### Simple Totals
             $investment += $set->investment();
             $profit     += $set->profit();
 
-            ### Dates
+            ### Date-Aware Totals
+            push(@allRealizations, @{$set->realizations()});
+
+            ### End-Date, Start-Date
             my $setStart = $set->startDate();
             $setStart or die "Didn't get set startDate for hashkey $hashKey\n";
             if (!defined($startDate)) {
@@ -162,17 +170,35 @@ sub calculateStats {
     }
     if ($setCount > 0) {
         if ($investment) {
+
             my $meanROI = $profit / $investment;
-            $self->{stats}{investment} = $investment;
-            $self->{stats}{profit} = $profit;
-            $self->{stats}{meanROI} = $meanROI;
-            $self->{stats}{startDate} = $startDate;
-            $self->{stats}{endDate} = $startDate;
+            my $stats = $self->{stats};
+            $stats->{investment} = $investment;
+            $stats->{profit} = $profit;
+            $stats->{meanROI} = $meanROI;
+            $stats->{startDate} = $startDate;
+            $stats->{endDate} = $startDate;
             my $secondsInYear = 60 * 60 * 24 * 365.25;
             my $secondsInAccount = $endDate->epoch() - $startDate->epoch();
             my $annualRatio = $secondsInYear / $secondsInAccount;
-            $self->{stats}{meanAnnualProfit} = $profit * $annualRatio;
-            $self->{stats}{stale} = 0;
+            $stats->{meanAnnualProfit} = $profit * $annualRatio;
+
+            my @allTransactions = sort { $a->tm() <=> $b->tm() } map { @{$_->acquisitions()}, $_->divestment() } @allRealizations;
+            @allRealizations = ();
+            my ($total, $max) = (0, 0);
+            for (my $x=0; $x<scalar(@allTransactions); $x++) {
+                my $transaction = $allTransactions[$x];
+                $total += 0 - $transaction->cashEffect();
+                $total > $max and $max = $total;
+            }
+            @allTransactions = ();
+            $stats->{minInvestment} = $max;
+            my $ROI = $profit / $max;
+            $stats->{ROI} = $ROI;
+            $stats->{meanAnnualROI} = $ROI * $annualRatio;
+
+            $stats->{stale} = 0;
+
             return 1;
         }
         else {
@@ -206,12 +232,24 @@ sub meanAnnualProfit {
     return $self->{stats}{meanAnnualProfit};
 }
 
-sub meanROI {
+sub minInvestment {
     my $self = shift;
     $self->getStats();
-    return $self->{stats}{meanROI};
+    return $self->{stats}{minInvestment};
 }
 
+sub ROI {
+    my $self = shift;
+    $self->getStats();
+    my $stats = $self->{stats};
+    return $stats->{profit} / $stats->{minInvestment};
+}
+
+sub meanAnnualROI {
+    my $self = shift;
+    $self->getStats();
+    return $self->{stats}{meanAnnualROI};
+}
 
 
 =head1 NAME
@@ -229,7 +267,9 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
+Analyze past transactions in a personal stock account.  Get total profit, mean
+annual profit, minimum investment that was required to reach that profit, return
+on investment compared to that minimum, etc.
 
 Perhaps a little code snippet.
 
@@ -237,6 +277,34 @@ Perhaps a little code snippet.
 
     my $foo = Finance::StockAccount->new();
     ...
+
+Currently understood transaction types include buy, sell, short, and cover.
+
+Accounting is done by what I call the Greatest Realized Benefit (GRB) method:
+divestments (sales or covers) are processed from oldest to newest, and one or
+more prior acquisitions (buys or shorts) are matched with the sale by
+availability (meaning not all shares are already tied to another divestment) and
+lowest cost of the acquisition.
+
+I looked at the "Analyze" tools in my OptionsXpress account and saw it always
+used a "Last In, First Out" accounting method, which is ridiculous and was
+unacceptable to me so I wrote this software to find out my actual account
+performance, the one that matched my primary intention when trading which was
+usually to realize as much gain as possible.
+
+Dates are stored as Time::Moment objects, and may be specified either as a
+Time::Moment object or one of the string formats natively understood by
+Time::Moment.
+
+Optionally import a text export of activity from an OptionsXpress online
+brokerage account with Finance::StockAccount::Import::OptionsXpress -- more
+input formats to come.  (Please donate an export from a brokerage account to
+help this along!)
+
+If you want a pure stock transaction class or a pure stock class, look at
+
+Finance::StockAccount::Transaction
+Finance::StockAccount::Stock
 
 =head1 EXPORT
 
