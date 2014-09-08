@@ -1,6 +1,4 @@
 package Finance::StockAccount::Transaction;
-use Exporter 'import';
-@EXPORT_OK = qw(new);
 
 use Time::Moment;
 

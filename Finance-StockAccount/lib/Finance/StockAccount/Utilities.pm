@@ -1,6 +1,4 @@
 package StockAccount::Transaction::Utilities;
-use Exporter 'import';
-@EXPORT_OK = qw(new);
 
 use parent 'StockAccount::Transaction';
 

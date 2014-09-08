@@ -1,6 +1,4 @@
 package Finance::StockAccount::Stock;
-use Exporter 'import';
-@EXPORT_OK = qw(new);
 
 use strict;
 use warnings;

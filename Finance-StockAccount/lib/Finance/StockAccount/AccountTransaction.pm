@@ -1,6 +1,4 @@
 package Finance::StockAccount::AccountTransaction;
-use Exporter 'import';
-@EXPORT_OK = qw(new);
 
 use parent 'Finance::StockAccount::Transaction';
 
