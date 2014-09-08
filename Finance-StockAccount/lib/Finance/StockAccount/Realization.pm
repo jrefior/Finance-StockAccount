@@ -16,6 +16,9 @@ sub new {
         acquisitions        => [],
         divestedShares      => 0,
         realized            => undef,
+        commissions         => 0,
+        regulatoryFees      => 0,
+        otherFees           => 0,
         roi                 => undef,
     };
     bless($self, $class);
@@ -25,8 +28,12 @@ sub new {
 
 sub addAcquisition {
     my ($self, $acquisition, $shares) = @_;
-    push(@{$self->{acquisitions}}, $acquisition);
+    my $at = $acquisition->at();
     $self->{divestedShares} += $shares;
+    $self->{commissions} += $at->commission();
+    $self->{regulatoryFees} += $at->regulatoryFees();
+    $self->{otherFees} += $at->otherFees();
+    push(@{$self->{acquisitions}}, $acquisition);
     return 1;
 }
 
@@ -39,6 +46,9 @@ sub set {
                 my $divestment = $init->{$key};
                 if ($divestment and ref($divestment)) {
                     $self->{divestment} = $divestment;
+                    $self->{commissions} += $divestment->commission();
+                    $self->{regulatoryFees} += $divestment->regulatoryFees();
+                    $self->{otherFees} += $divestment->otherFees();
                 }
                 else {
                     $status = 0;
@@ -126,6 +136,9 @@ sub endDate {
 sub divestment          { return shift->{divestment};           }
 sub acquisitions        { return shift->{acquisitions};         }
 sub realized            { return shift->{realized};             }
+sub commissions         { return shift->{commissions};          }
+sub regulatoryFees      { return shift->{regulatoryFees};       }
+sub otherFees           { return shift->{otherFees};            }
 sub roi                 { return shift->{roi};                  }
 
 

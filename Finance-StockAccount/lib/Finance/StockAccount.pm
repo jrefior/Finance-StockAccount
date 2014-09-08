@@ -21,9 +21,11 @@ sub new {
             investment          => undef,
             minInvestment       => undef,
             profit              => undef,
+            commissions         => undef,
+            regulatoryFees      => undef,
+            otherFees           => undef,
             ROI                 => undef,
             meanAnnualROI       => undef,
-            roiPerRealization   => undef,
             meanAnnualProfit    => undef,
         },
         allowZeroPrice      => 0,
@@ -180,7 +182,7 @@ sub staleSets {
 
 sub calculateStats {
     my $self = shift;
-    my ($investment, $profit) = (0, 0);
+    my ($investment, $profit, $commissions, $regulatoryFees, $otherFees) = (0, 0, 0, 0, 0);
     my ($startDate, $endDate);
     my $setCount = 0;
     my @allRealizations = ();
@@ -192,8 +194,11 @@ sub calculateStats {
                 next unless $set->success();
             }
             ### Simple Totals
-            $investment += $set->investment();
-            $profit     += $set->profit();
+            $investment     += $set->investment();
+            $profit         += $set->profit();
+            $commissions    += $set->commissions();
+            $regulatoryFees += $set->regulatoryFees();
+            $otherFees      += $set->otherFees();
 
             ### Date-Aware Totals
             push(@allRealizations, @{$set->realizations()});
@@ -224,6 +229,9 @@ sub calculateStats {
             my $stats = $self->{stats};
             $stats->{investment} = $investment;
             $stats->{profit} = $profit;
+            $stats->{commissions} = $commissions;
+            $stats->{regulatoryFees} = $regulatoryFees;
+            $stats->{otherFees} = $otherFees;
             $stats->{meanROI} = $meanROI;
             $stats->{startDate} = $startDate;
             $stats->{endDate} = $startDate;
@@ -298,6 +306,24 @@ sub meanAnnualROI {
     my $self = shift;
     $self->getStats();
     return $self->{stats}{meanAnnualROI};
+}
+
+sub commissions {
+    my $self = shift;
+    $self->getStats();
+    return $self->{stats}{commissions};
+}
+
+sub regulatoryFees {
+    my $self = shift;
+    $self->getStats();
+    return $self->{stats}{regulatoryFees};
+}
+
+sub otherFees {
+    my $self = shift;
+    $self->getStats();
+    return $self->{stats}{otherFees};
 }
 
 

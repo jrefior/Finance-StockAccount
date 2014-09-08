@@ -190,6 +190,17 @@ sub regulatoryFees {
     }
 }
 
+sub otherFees {
+    my ($self, $otherFees) = @_;
+    if ($otherFees) {
+        $self->{otherFees} = $otherFees;
+        return 1;
+    }
+    else {
+        return $self->{otherFees};
+    }
+}
+
 sub priceByQuantity {
     my $self = shift;
     return $self->{price} * $self->{quantity};

@@ -22,6 +22,9 @@ sub new {
                 profit              => 0,
                 investment          => 0,
                 proceeds            => 0,
+                commissions         => 0,
+                regulatoryFees      => 0,
+                otherFees           => 0,
                 ROI                 => 0,
                 startDate           => undef,
                 endDate             => undef,
@@ -148,6 +151,9 @@ sub accountPriorPurchase {
         $self->{stats}{profit} += $realization->realized();
         $self->{stats}{investment} += $realization->costBasis();
         $self->{stats}{proceeds} += $realization->proceeds();
+        $self->{stats}{commissions} += $realization->commissions();
+        $self->{stats}{regulatoryFees} += $realization->regulatoryFees();
+        $self->{stats}{otherFees} += $realization->otherFees();
         $self->computeRoi();
         $self->{success} = 1;
         return 1;
@@ -224,6 +230,9 @@ sub endDate {
 sub profit              { return shift->{stats}{profit}                 };
 sub investment          { return shift->{stats}{investment}             };
 sub proceeds            { return shift->{stats}{proceeds}               };
+sub commissions         { return shift->{stats}{commissions}            };
+sub regulatoryFees      { return shift->{stats}{regulatoryFees}         };
+sub otherFees           { return shift->{stats}{otherFees}              };
 sub roi                 { return shift->{stats}{ROI}                    };
 sub success             { return shift->{success}                       };
 sub realizations        { return shift->{realizations}                  };
