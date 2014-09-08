@@ -3,12 +3,14 @@ package Finance::StockAccount::Import;
 use strict;
 use warnings;
 
+use Carp;
+
 use Finance::StockAccount;
 use Finance::StockAccount::AccountTransaction;
 
 sub new {
     my ($class, $file, $tzoffset) = @_;
-    $file or die "Please pass a file to import.\n";
+    $file or confess "Please pass a file to import.\n";
     my $self = {
         file                => $file,
         fh                  => undef,

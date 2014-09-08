@@ -1,11 +1,10 @@
 package Finance::StockAccount::Set;
-use Exporter 'import';
-@EXPORT_OK = qw(new);
 
 use strict;
 use warnings;
 
 use Time::Moment;
+use Carp;
 
 use Finance::StockAccount::Realization;
 
@@ -46,7 +45,7 @@ sub stale {
             return 1;
         }
         else {
-            die "Method 'stale' only accepts assertions in the form of 1 or 0 -- $assertion is not valid.\n";
+            croak "Method 'stale' only accepts assertions in the form of 1 or 0 -- $assertion is not valid.";
         }
     }
     else {
@@ -57,18 +56,18 @@ sub stale {
 sub add {
     my ($self, $accountTransactions) = @_;
     ($accountTransactions and 'ARRAY' eq ref($accountTransactions))
-        or die "Set->add([\$st1, \$st2, \$st3, ...]) ... method requires a reference to a list of st objects.\n";
+        or confess "Set->add([\$st1, \$st2, \$st3, ...]) ... method requires a reference to a list of st objects.\n";
     my $set = $self->{accountTransactions};
     my $added = 0;
     my $stock = $self->{stock};
     foreach my $at (@$accountTransactions) {
-        'Finance::StockAccount::AccountTransaction' eq ref($at) or die "Not a valid at object.\n";
+        'Finance::StockAccount::AccountTransaction' eq ref($at) or confess "Not a valid at object.\n";
         if (!$stock) {
             if ($stock = $at->stock()) {
                 $self->{stock} = $stock;
             }
         }
-        $stock->same($at->stock()) or die "Given Stock Transaction object does not match stock for set, or set stock is undefined.\n";
+        $stock->same($at->stock()) or croak "Given Stock Transaction object does not match stock for set, or set stock is undefined.";
         push(@$set, $at);
         $added = 1;
     }
@@ -120,7 +119,7 @@ sub computeRoi {
 sub accountPriorPurchase {
     my ($self, $index) = @_;
     if (!$self->{dateSort}) {
-        die "Cannot account prior purchase when transactions have not been sorted by date.\n";
+        confess "Cannot account prior purchase when transactions have not been sorted by date.\n";
     }
     my $accountTransactions = $self->{accountTransactions};
     my $divestment = $accountTransactions->[$index];
@@ -155,7 +154,7 @@ sub accountPriorPurchase {
     }
     else {
         my $symbol = $divestment->symbol();
-        warn "Unable to account for sold shares of symbol $symbol at index $index.\n";
+        print "[Info] Unable to account for sold shares of symbol $symbol at index $index. There is no acquisition that matches this divestment.\n";
         return 0;
     }
 }

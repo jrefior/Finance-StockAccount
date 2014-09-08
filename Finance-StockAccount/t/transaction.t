@@ -33,7 +33,6 @@ use_ok('Finance::StockAccount::Transaction');
     is($st->cashEffect(), $cashEffect, 'Cash effect matches.');
 }
 
-
 {
     my $hash = {
         dateString      => '20120131T120000Z',
@@ -52,10 +51,15 @@ use_ok('Finance::StockAccount::Transaction');
     is($st->quantity(), 500, 'Quantity matches.');
 }
 
+{
+    my $stockHash = {
+        symbol      => 'BILL',
+        exchange    => 'NYSE',
+    };
+    ok(my $stock = Finance::StockAccount::Stock->new($stockHash), 'Created new stock object.');
+    ok(my $st = Finance::StockAccount::Transaction->new({stock => $stock}), 'Passed in stock to transaction constructor.');
+}
     
 
 
-
 done_testing();
-
-

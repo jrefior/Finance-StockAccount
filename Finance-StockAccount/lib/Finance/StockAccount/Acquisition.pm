@@ -1,9 +1,9 @@
 package Finance::StockAccount::Acquisition;
-use Exporter 'import';
-@EXPORT_OK = qw(new);
 
 use strict;
 use warnings;
+
+use Carp;
 
 use Finance::StockAccount::AccountTransaction;
 
@@ -29,7 +29,7 @@ sub at {
             return 1;
         }
         else {
-            die "Acquisition requires a valid AccountTransaction object of type buy or short.";
+            confess "Acquisition requires a valid AccountTransaction object of type buy or short.";
             return 0;
         }
     }
@@ -68,7 +68,7 @@ sub compute {
 sub init {
     my ($self, $at, $shares) = @_;
     if (!($at and $shares)) {
-        die "Acquisition->new constructor requires \$at (AccountTransaction) and shares count parameters.\n";
+        confess "Acquisition->new constructor requires \$at (AccountTransaction) and shares count parameters.\n";
     }
     if ($shares =~ /^[0-9]+$/ and $shares > 0) {
         $self->at($at);
@@ -77,7 +77,7 @@ sub init {
         return 1;
     }
     else {
-        die "Acquisition::Init requires numeric positive shares value, got $shares.\n";
+        confess "Acquisition::Init requires numeric positive shares value, got $shares.\n";
         return 0;
     }
 }

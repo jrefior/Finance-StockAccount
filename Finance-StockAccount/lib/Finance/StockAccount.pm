@@ -3,12 +3,14 @@ package Finance::StockAccount;
 use strict;
 use warnings;
 
+use Carp;
+
 use Finance::StockAccount::Set;
 use Finance::StockAccount::AccountTransaction;
 use Finance::StockAccount::Stock;
 
 sub new {
-    my $class = shift;
+    my ($class, $options) = @_;
     my $self = {
         sets                => {},
         skipStocks          => [],
@@ -24,8 +26,23 @@ sub new {
             roiPerRealization   => undef,
             meanAnnualProfit    => undef,
         },
+        allowZeroPrice      => 0,
     };
+    if ($options and exists($options->{allowZeroPrice}) and $options->{allowZeroPrice}) {
+        $self->{allowZeroPrice} = 1;
+    }
     return bless($self, $class);
+}
+
+sub allowZeroPrice {
+    my ($self, $allowZeroPrice) = @_;
+    if (defined($allowZeroPrice)) {
+        $self->{allowZeroPrice} = $allowZeroPrice ? 1 : 0;
+        return 1;
+    }
+    else {
+        return $self->{allowZeroPrice};
+    }
 }
 
 sub getSet {
@@ -101,13 +118,45 @@ sub addAccountTransactions {
 
 sub stockTransaction {
     my ($self, $init) = @_;
-    my $at = Finance::StockAccount::AccountTransaction->new($init);
-    if ($at) {
-        return $self->addToSet($at);
+    my $helpString = q{  Please see 'perldoc Finance::StockAccount'.};
+    if (!(exists($init->{tm}) or exists($init->{dateString}))) {
+        carp "A date is required to add a stock transaction, using either the 'tm' key or the 'dateString' key.$helpString";
+        return 0;
+    }
+    elsif (!(exists($init->{stock}) or exists($init->{symbol}))) {
+        carp "A stock is required to add a transaction, using either the 'stock' key or the 'symbol' key.$helpString";
+        return 0;
+    }
+    elsif (!(exists($init->{action}) and (grep { $_ eq $init->{action} } qw(buy sell short cover)))) {
+        carp "To add a transaction, you must specify an action, one of 'buy', 'sell', 'short', or 'cover'.$helpString";
+        return 0;
+    }
+    elsif (!(exists($init->{quantity}) and $init->{quantity} =~ /[0-9]/ and $init->{quantity} > 0)) {
+        carp "To add a transaction, you must specify a numeric quantity, and it must be greater than zero.$helpString";
+        return 0;
+    }
+    elsif (!(exists($init->{price}) and $init->{price} =~ /[0-9]/)) {
+        carp "To add a transaction, you must specify a price, and it must be numeric.$helpString";
+        return 0;
+    }
+    elsif ($init->{price} <= 0 and !$self->{allowZeroPrice}) {
+        carp "To add a transaction, price must be greater than zero.  By default, prices zero or lower are treated as suspect and not included in calculations.  You may override this default behavior by setting 'allowZeroPrice' to true.$helpString";
+        return 0;
     }
     else {
-        warn "Unable to create AccountTransaction object with those parameters.\n";
-        return 0;
+        if (exists($init->{stock}) and (exists($init->{symbol}) or exists($init->{exchange}))) {
+            carp "To add a transaction, you may specify a Finance::StockAccount::Stock object, or a symbol (optionally with an exchange).  You need not specify both.  Proceeding on the assumption that the stock object is intentional and the symbol/exchange are accidental...";
+            exists($init->{symbol}) and delete($init->{symbol});
+            exists($init->{exchange}) and delete($init->{exchange});
+        }
+        my $at = Finance::StockAccount::AccountTransaction->new($init);
+        if ($at) {
+            return $self->addToSet($at);
+        }
+        else {
+            carp "Unable to create AccountTransaction object with those parameters.\n";
+            return 0;
+        }
     }
 }
 
@@ -254,7 +303,7 @@ sub meanAnnualROI {
 
 =head1 NAME
 
-Finance::StockAccount - The great new Finance::StockAccount!
+Finance::StockAccount - Analyze past transactions in a personal stock account.
 
 =head1 VERSION
 
@@ -286,34 +335,41 @@ more prior acquisitions (buys or shorts) are matched with the sale by
 availability (meaning not all shares are already tied to another divestment) and
 lowest cost of the acquisition.
 
-I looked at the "Analyze" tools in my OptionsXpress account and saw it always
-used a "Last In, First Out" accounting method, which is ridiculous and was
-unacceptable to me so I wrote this software to find out my actual account
-performance, the one that matched my primary intention when trading which was
-usually to realize as much gain as possible.
+I looked at the "Analyze" tools in my OptionsXpress online brokerage account
+and saw it always used a "Last In, First Out" accounting method, which is
+ridiculous and was unacceptable to me so I wrote this software to find out my
+actual account performance, the one that matched my primary intention when
+trading which was usually to realize as much gain as possible.
 
 Dates are stored as Time::Moment objects, and may be specified either as a
 Time::Moment object or one of the string formats natively understood by
 Time::Moment.
 
-Optionally import a text export of activity from an OptionsXpress online
-brokerage account with Finance::StockAccount::Import::OptionsXpress -- more
-input formats to come.  (Please donate an export from a brokerage account to
-help this along!)
+If you happen to have an OptionsXpress online brokerage account you can import
+the whole thing in one go with Finance::StockAccount::Import::OptionsXpress.
+(I would like to add more formats, so please donate an export from a brokerage
+account to help this along!)
 
-If you want a pure stock transaction class or a pure stock class, look at
+Along the way I tried to create a pure stock transaction class and a pure stock
+class, please look at
 
 Finance::StockAccount::Transaction
 Finance::StockAccount::Stock
 
-=head1 EXPORT
+for those.
 
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
+=head1 METHODS
 
-=head1 SUBROUTINES/METHODS
+=head2 new
 
-=head2 function1
+Constructor, instantiates a new Finance::StockAccount object.  Typically called
+with no arguments:
+
+    my $sa = Finance::StockAccount->new();
+
+Currently there is only one StockAccount option/setting, which may be passed to new if desired.  By default, attempts to add a stock transaction with a zero price to a StockAccount object will be treated as suspect and fail.  I realize that is personal preference, so it may optionally be overcome by setting allowZeroPrice, like so:
+
+    my $sa = Finance::StockAccount->new({allowZeroPrice => 1});
 
 =cut
 
