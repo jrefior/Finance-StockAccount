@@ -165,16 +165,15 @@ sub stockTransaction {
 sub skipStocks {
     my ($self, @skipStocks) = @_;
     my $count = 0;
-    foreach my $stock (@skipStocks) {
-        $self->{skipStocks}{$stock} = 1;
-        $count++;
-    }
-    if ($count) {
+    if (scalar(@skipStocks)) {
+        foreach my $stock (@skipStocks) {
+            $self->{skipStocks}{$stock} = 1;
+        }
         $self->{stats}{stale} = 1;
         return 1;
     }
     else {
-        return 0;
+        return sort keys %{$self->{skipStocks}};
     }
 }
 
@@ -273,6 +272,9 @@ sub calculateStats {
             $stats->{endDate} = $startDate;
             my $secondsInYear = 60 * 60 * 24 * 365.25;
             my $secondsInAccount = $endDate->epoch() - $startDate->epoch();
+            if (!$secondsInAccount) {
+                croak "No time passed in account? Can't calculate time-related stats.";
+            }
             my $annualRatio = $secondsInYear / $secondsInAccount;
             $stats->{meanAnnualProfit} = $profit * $annualRatio;
 
@@ -522,6 +524,34 @@ work.  Please see the perldoc for Time::Moment for more information.
 
 B<Required: action>
 
+head2 skipStocks
+
+After adding a bunch of transactions, or importing an entire account history,
+you may wish to exclude certain stocks from calculations, at least temporarily.
+You can do this using the skipStocks method.  Pass it a string list of the
+stock symbols you would like to skip.  If the optional exchange parameter was
+set, you must append the exchange string to the symbol string with a colon.
+For example:
+
+    $sa->skipStocks(qw(AMD TWTR:NYSE));
+    my $profit = $sa->profit();
+    ...
+
+Now any calculations, such as profit, will exclude the stock specified as
+symbol => 'AMD' with no exchange, and the stock specified as symbol => 'TWTR',
+exchange => 'NYSE'.
+
+New calls to the method are additive, so you can add skip stocks one at a time
+or all at once or anywhere in between.
+
+If you'd like to see the current set of skipStocks, you can call the method with no arguments and it will return an alphabetically sorted list of strings:
+
+    print join(', ', $sa->skipStocks()), "\n"; # prints "AMD, TWTR:NYSE\n"
+
+head2 resetSkipStocks
+
+Use this method to reset the skipStocks list to an empty list.
+
 =head2 allowZeroPrice
 
 Transactions where the price is zero are treated as suspect by default, and
@@ -539,6 +569,7 @@ or or check the value with the same method and no arguments:
     }
 
 As mentioned above, it can also be set using the new method, described above.
+
 
 =cut
 

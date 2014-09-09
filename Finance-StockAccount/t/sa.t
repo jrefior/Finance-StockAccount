@@ -53,10 +53,12 @@ use_ok('Finance::StockAccount');
     ok($sa->skipStocks(qw(GOOGL)), 'Add GOOGL to skipstocks list.');
     is($sa->profit(), 460, 'Got expected profit -- skipping GOOGL.');
     ok($sa->resetSkipStocks(), 'Reset skip stocks.');
+    is(scalar($sa->skipStocks()), 0, 'Skip stocks are now an empty list.');
     is($sa->profit(), 564, 'Including GOOGL again, got expected profit.');
     ok($sa->skipStocks(qw(GOOGL)), 'Added GOOGL back onto skipstocks list.');
     ok($sa->skipStocks(qw(INTC AMD)), 'Added INTC and AMD to skipstocks list.');
     ok(!$sa->profit(), 'Correctly failed to get profit when all stocks were skipped.');
+    is(join('', $sa->skipStocks()), join('', sort qw(GOOGL INTC AMD)), 'Got expected skipStocks list.');
 }
 
 {
