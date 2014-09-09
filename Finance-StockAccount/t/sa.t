@@ -24,7 +24,7 @@ use_ok('Finance::StockAccount');
         price           => 569,
         commission      => 10,
     };
-    my $atHash3 = {
+    my $atHash3 = { # 2836
         symbol          => 'INTC',
         dateString      => '20130427T120600Z',
         action          => 'buy',
@@ -32,7 +32,7 @@ use_ok('Finance::StockAccount');
         price           => 28.26,
         commission      => 10,
     };
-    my $atHash4 = {
+    my $atHash4 = { # 3296
         symbol          => 'INTC',
         dateString      => '20140302T164500Z',
         action          => 'sell',
@@ -50,6 +50,10 @@ use_ok('Finance::StockAccount');
     ok($sa->ROI() =~ /^0\.112/, 'Got expected return on investment.');
     ok($sa->meanAnnualProfit() =~ /^595\./, 'Got expected mean annual profit.');
     ok($sa->meanAnnualROI() =~ /^0\.119/, 'Got expected mean annual ROI.');
+    ok($sa->skipStocks(qw(GOOGL)), 'Add GOOGL to skipstocks list.');
+    is($sa->profit(), 460, 'Got expected profit -- skipping GOOGL.');
+    ok($sa->resetSkipStocks(), 'Reset skip stocks.');
+    is($sa->profit(), 564, 'Including GOOGL again, got expected profit.');
 }
 
 {

@@ -13,7 +13,7 @@ sub new {
     my ($class, $options) = @_;
     my $self = {
         sets                => {},
-        skipStocks          => [],
+        skipStocks          => {},
         stats               => {
             stale               => 1,
             startDate           => undef,
@@ -59,7 +59,7 @@ sub getSet {
 
 sub getSetFiltered {
     my ($self, $hashKey) = @_;
-    if (grep { $_ eq $hashKey } @{$self->{skipStocks}}) {
+    if ($self->{skipStocks}{$hashKey}) {
         return undef;
     }
     elsif (exists($self->{sets}{$hashKey})) {
@@ -142,12 +142,12 @@ sub stockTransaction {
         return 0;
     }
     elsif ($init->{price} <= 0 and !$self->{allowZeroPrice}) {
-        carp "To add a transaction, price must be greater than zero.  By default, prices zero or lower are treated as suspect and not included in calculations.  You may override this default behavior by setting 'allowZeroPrice' to true.$helpString";
+        carp "To add a transaction, price must be greater than zero.  By default, prices zero or lower are treated as suspect and not included in calculations.\nYou may override this default behavior by setting 'allowZeroPrice' to true.$helpString";
         return 0;
     }
     else {
         if (exists($init->{stock}) and (exists($init->{symbol}) or exists($init->{exchange}))) {
-            carp "To add a transaction, you may specify a Finance::StockAccount::Stock object, or a symbol (optionally with an exchange).  You need not specify both.  Proceeding on the assumption that the stock object is intentional and the symbol/exchange are accidental...";
+            carp "To add a transaction, you may specify a Finance::StockAccount::Stock object, or a symbol (optionally with an exchange).\nYou need not specify both.  Proceeding on the assumption that the stock object is intentional and the symbol/exchange are accidental...";
             exists($init->{symbol}) and delete($init->{symbol});
             exists($init->{exchange}) and delete($init->{exchange});
         }
@@ -163,8 +163,27 @@ sub stockTransaction {
 }
 
 sub skipStocks {
-    my ($self, $skipStocks) = @_;
-    push(@{$self->{skipStocks}}, @$skipStocks);
+    my ($self, @skipStocks) = @_;
+    my $count = 0;
+    foreach my $stock (@skipStocks) {
+        $self->{skipStocks}{$stock} = 1;
+        $count++;
+    }
+    if ($count) {
+        $self->{stats}{stale} = 1;
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
+sub resetSkipStocks {
+    my $self = shift;
+    if (scalar(keys %{$self->{skipStocks}})) {
+        $self->{skipStocks} = {};
+        $self->{stats}{stale} = 1;
+    }
     return 1;
 }
 
@@ -386,16 +405,119 @@ for those.
 
 =head1 METHODS
 
+
 =head2 new
 
-Constructor, instantiates a new Finance::StockAccount object.  Typically called
-with no arguments:
+
+Constructor, instantiates and returns a new Finance::StockAccount object.
+Typically called with no arguments:
 
     my $sa = Finance::StockAccount->new();
 
-Currently there is only one StockAccount option/setting, which may be passed to new if desired.  By default, attempts to add a stock transaction with a zero price to a StockAccount object will be treated as suspect and fail.  I realize that is personal preference, so it may optionally be overcome by setting allowZeroPrice, like so:
+Currently there is only one StockAccount option/setting, which may be passed to
+new if desired.  By default, attempts to add a stock transaction with a zero
+price to a StockAccount object will be treated as suspect and fail.  I realize
+that is personal preference, so it may optionally be overcome by setting
+allowZeroPrice, like so:
 
     my $sa = Finance::StockAccount->new({allowZeroPrice => 1});
+
+This option can also be set via method (see allowZeroPrice method below).
+
+
+=head2 stockTransaction
+
+
+This is the intended means of adding transactions to a StockAccount object.
+An instantiation hash is passed in.  Here is an example:
+
+    $sa->stockTransaction({
+        symbol          => 'TWTR',
+        dateString      => '20140708T185304Z',
+        action          => 'buy',
+        quantity        => 50,
+        price           => 37.33,
+        commission      => 8.95,
+    });
+
+Several pieces of information are required.
+
+B<Required: stock>
+
+For one, there must be a stock.  It may be specified as a symbol string, as
+above.  An optional exchange string may be passed in as well:
+
+        symbol          => 'TWTR',
+        exchange        => 'NYSE', # optional
+
+Alternatively, a stock object can be created using Finance::StockAccount::Stock
+and passed in with the stock key:
+
+    my $stock = Finance::StockAccount::Stock->new({
+        symbol          => 'TWTR',
+        exchange        => 'NYSE', # optional
+    });
+    $sa->stockTransaction({
+        stock           => $stock,
+        ...
+    });
+
+The same $stock object could then be used over and over to pass in transactions
+on that stock. But even if you use a symbol string each time, they will be
+treated as the same stock.  An exchange modifies a stock, so you could have two
+stocks with the same symbol traded on two different exchanges and they would be
+kept separate inside your StockAccount object. 
+
+B<Required: date>
+
+Second, there must be a date for the transaction.  Dates are necessary for
+matching a sale to is prior purchase, or for calculating the mean annual profit
+(or loss), for example.  Finance::StockAccount uses the CPAN module
+Time::Moment to handle dates.  A date can either be passed in as a string using
+the dateString key:
+
+        dateString      => '20140708T185304Z',
+
+or a Time::Moment object can be passed in using the tm key:
+
+    my $tm = Time::Moment->new({ # the same date as the string above
+        year        => 2014,
+        month       => 7,
+        day         => 8,
+        hour        => 18,
+        minute      => 53,
+        second      => 4,
+        offset      => 0,
+    });
+    $sa->stockTransaction({
+        symbol          => 'TWTR',
+        tm              => $tm,
+        ...
+    });
+
+If using a string passed in with the dateString key, any string acceptable to
+the Time::Moment->from_string method without using the 'lenient' flag will
+work.  Please see the perldoc for Time::Moment for more information.
+
+B<Required: action>
+
+=head2 allowZeroPrice
+
+Transactions where the price is zero are treated as suspect by default, and
+stockTransaction will not add them to the StockAccount object.  However, there
+are some legitimate use cases where one might want them to be included, so you
+can set the allowZeroPrice option on the StockAccount object to do that:
+
+    $sa->allowZeroPrice(1); # allow transactions with price == 0
+    $sa->allowZeroPrice(0); # disallow transactions with price == 0
+
+or or check the value with the same method and no arguments:
+
+    if ($sa->allowZeroPrice()) {
+        ... do something ...
+    }
+
+As mentioned above, it can also be set using the new method, described above.
 
 =cut
 
