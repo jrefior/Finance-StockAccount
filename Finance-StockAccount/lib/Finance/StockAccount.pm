@@ -199,6 +199,23 @@ sub staleSets {
     return $stale;
 }
 
+sub emptyStats {
+    my $self = shift;
+    my $stats = $self->{stats};
+    $stats->{startDate}           = undef;
+    $stats->{endDate}             = undef;
+    $stats->{investment}          = undef;
+    $stats->{minInvestment}       = undef;
+    $stats->{profit}              = undef;
+    $stats->{commissions}         = undef;
+    $stats->{regulatoryFees}      = undef;
+    $stats->{otherFees}           = undef;
+    $stats->{ROI}                 = undef;
+    $stats->{meanAnnualROI}       = undef;
+    $stats->{meanAnnualProfit}    = undef;
+    return 1;
+}
+
 sub calculateStats {
     my $self = shift;
     my ($investment, $profit, $commissions, $regulatoryFees, $otherFees) = (0, 0, 0, 0, 0);
@@ -278,22 +295,26 @@ sub calculateStats {
             return 1;
         }
         else {
-            warn "No investment found on which to compute stats.\n";
+            carp "No investment found on which to compute stats.\n";
+            $self->emptyStats();
             return 0;
         }
     }
     else {
-        print "No realized gains in stock account.\n";
-        return 1;
+        carp "No realized gains in stock account.\n";
+        $self->emptyStats();
+        return 0;
     }
 }
 
 sub getStats {
     my $self = shift;
     if ($self->{stats}{stale} or $self->staleSets()) {
-        $self->calculateStats();
+        return $self->calculateStats();
     }
-    return 1;
+    else {
+        return 1;
+    }
 }
 
 sub profit {
