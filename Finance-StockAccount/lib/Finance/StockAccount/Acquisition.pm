@@ -13,8 +13,10 @@ sub new {
     my $self = {
         at                  => undef,
         shares              => 0,
-        cashEffect          => undef,
-        feesAndCommissions  => undef,
+        cashEffect          => 0,
+        commission          => 0,
+        regulatoryFees      => 0,
+        otherFees           => 0,
     };
     bless($self, $class);
     $self->init($at, $shares);
@@ -39,7 +41,9 @@ sub at {
 }
 
 sub cashEffect         { return shift->{cashEffect};         }
-sub feesAndCommissions { return shift->{feesAndCommissions}; }
+sub commission         { return shift->{commission};         }
+sub regulatoryFees     { return shift->{regulatoryFees};     }
+sub otherFees          { return shift->{otherFees};          }
 sub shares             { return shift->{shares};             }
 
 sub tm {
@@ -60,8 +64,10 @@ sub compute {
     my $self = shift;
     my $proportion = $self->proportion();
     my $at = $self->at();
-    $self->{cashEffect} = $at->cashEffect() * $proportion;
-    $self->{feesAndCommissions} = $at->feesAndCommissions() * $proportion;
+    $self->{cashEffect}     = $at->cashEffect() * $proportion;
+    $self->{commission}     = $at->commission() * $proportion;
+    $self->{regulatoryFees} = $at->regulatoryFees() * $proportion;
+    $self->{otherFees}      = $at->otherFees() * $proportion;
     return 1;
 }
 

@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Time::Moment;
+use Carp;
 
 use Finance::StockAccount::AccountTransaction;
 use Finance::StockAccount::Acquisition;
@@ -14,12 +15,13 @@ sub new {
         stock               => undef,
         divestment          => undef,
         acquisitions        => [],
-        divestedShares      => 0,
-        realized            => undef,
+        costBasis           => 0,
+        proceeds            => 0,
+        realized            => 0,
         commissions         => 0,
         regulatoryFees      => 0,
         otherFees           => 0,
-        roi                 => undef,
+        roi                 => 0,
     };
     bless($self, $class);
     $init and $self->set($init);
@@ -27,12 +29,34 @@ sub new {
 }
 
 sub addAcquisition {
-    my ($self, $acquisition, $shares) = @_;
-    my $at = $acquisition->at();
-    $self->{divestedShares} += $shares;
-    $self->{commissions} += $at->commission();
-    $self->{regulatoryFees} += $at->regulatoryFees();
-    $self->{otherFees} += $at->otherFees();
+    my ($self, $acquisition, $dateLimitPortion) = @_;
+    if (!defined($dateLimitPortion)) {
+        $dateLimitPortion = 1; # Assume no date limit restriction if none specified, i.e., none by default
+    }
+    my $shares = $acquisition->shares();
+    my $divestment = $self->{divestment};
+    my $divQuantity = $divestment->quantity();
+    my $divestedPortion;
+    if ($divQuantity) {
+        $divestedPortion = $shares / $divQuantity;
+    }
+    else {
+        croak "No shares divested in transaction, cannot proceed with realization.";
+    }
+
+    my $divCommission     += $divestedPortion * $divestment->commission();
+    my $divRegulatoryFees += $divestedPortion * $divestment->regulatoryFees();
+    my $divOtherFees      += $divestedPortion * $divestment->otherFees();
+
+    my $costBasis = 0 - $dateLimitPortion * $acquisition->cashEffect();
+    my $proceeds  = $dateLimitPortion * $divestedPortion * $divestment->cashEffect();
+    $self->{costBasis}      += $costBasis;
+    $self->{proceeds}       += $proceeds;
+    $self->{realized}       += $proceeds - $costBasis;
+    $self->{commissions}    += $dateLimitPortion * ($acquisition->commission()     + $divCommission    );
+    $self->{regulatoryFees} += $dateLimitPortion * ($acquisition->regulatoryFees() + $divRegulatoryFees);
+    $self->{otherFees}      += $dateLimitPortion * ($acquisition->otherFees()      + $divOtherFees     );
+
     push(@{$self->{acquisitions}}, $acquisition);
     return 1;
 }
@@ -46,9 +70,6 @@ sub set {
                 my $divestment = $init->{$key};
                 if ($divestment and ref($divestment)) {
                     $self->{divestment} = $divestment;
-                    $self->{commissions} += $divestment->commission();
-                    $self->{regulatoryFees} += $divestment->regulatoryFees();
-                    $self->{otherFees} += $divestment->otherFees();
                 }
                 else {
                     $status = 0;
@@ -71,37 +92,15 @@ sub set {
     return $status;
 }
 
-sub costBasis {
+sub roi {
     my $self = shift;
-    my $costBasis = 0;
-    foreach my $acquisition (@{$self->{acquisitions}}) {
-        $costBasis -= $acquisition->cashEffect();
-    }
-    return $costBasis;
-}
-
-sub proceeds {
-    my $self = shift;
-    my $divestment = $self->{divestment};
-    my $shares = $self->{divestedShares};
-    my $ratio = $shares / $divestment->quantity();
-    my $feesAndCommissions = $ratio * $divestment->feesAndCommissions();
-    return $divestment->price() * $shares - $feesAndCommissions;
-}
-
-sub realize {
-    my $self = shift;
-    my $costBasis = $self->costBasis();
-    my $proceeds = $self->proceeds();
-    my $realized = $proceeds - $costBasis;
-    $self->{realized} = $realized;
+    my $costBasis = $self->{costBasis};
     if ($costBasis) {
-        $self->{roi} = $realized / $costBasis;
-        return 1;
+        return $self->{realized} / $costBasis;
     }
     else {
         warn "Realize method finds no cost basis upon which to compute ROI.\n";
-        return 0;
+        return undef;
     }
 }
 
@@ -133,13 +132,15 @@ sub endDate {
     return $divestment->tm();
 }
 
+
 sub divestment          { return shift->{divestment};           }
 sub acquisitions        { return shift->{acquisitions};         }
+sub costBasis           { return shift->{costBasis};            }
+sub proceeds            { return shift->{proceeds};             }
 sub realized            { return shift->{realized};             }
 sub commissions         { return shift->{commissions};          }
 sub regulatoryFees      { return shift->{regulatoryFees};       }
 sub otherFees           { return shift->{otherFees};            }
-sub roi                 { return shift->{roi};                  }
 
 
 

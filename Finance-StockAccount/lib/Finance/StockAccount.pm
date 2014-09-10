@@ -524,6 +524,42 @@ work.  Please see the perldoc for Time::Moment for more information.
 
 B<Required: action>
 
+A value for the 'action' key is required and must be one of the following
+strings: 'buy', 'sell', 'short', or 'cover'.  E.g.:
+
+    $sa->stockTransaction({
+        ...
+        action  => 'sell',
+        ...
+    });
+
+B<Required: quantity>
+
+A numeric value for quantity greater than zero is required:
+
+    $sa->stockTransaction({
+        ...
+        quantity    => 60,
+        ...
+    });
+
+B<Required: price>
+
+A numeric value for price is also required:
+
+    $sa->stockTransaction({
+        ...
+        price    => 4.55,
+        ...
+    });
+
+By default, the price is required to be greater than zero, but see the
+'allowZeroPrice' section below.
+
+head2 profit
+
+Returns the numeric total profit (or loss) for all realizations in the stock account.
+
 head2 skipStocks
 
 After adding a bunch of transactions, or importing an entire account history,
@@ -544,9 +580,12 @@ exchange => 'NYSE'.
 New calls to the method are additive, so you can add skip stocks one at a time
 or all at once or anywhere in between.
 
-If you'd like to see the current set of skipStocks, you can call the method with no arguments and it will return an alphabetically sorted list of strings:
+If you'd like to see the current set of skipStocks, you can call the method
+with no arguments and it will return an alphabetically sorted list of strings:
 
     print join(', ', $sa->skipStocks()), "\n"; # prints "AMD, TWTR:NYSE\n"
+
+If there are no skip stocks to return, it will return undef.
 
 head2 resetSkipStocks
 

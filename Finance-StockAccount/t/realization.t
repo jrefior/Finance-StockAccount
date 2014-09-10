@@ -41,11 +41,10 @@ ok(my $at3 = Finance::StockAccount::AccountTransaction->new($initAt3), 'Created 
         divestment      => $at3,
     };
     ok(my $realization = Finance::StockAccount::Realization->new($initRealization), 'Instantiated Realization object.');
-    ok($realization->addAcquisition($acquisition1, 100), 'Added first acquisition for 100 shares.');
-    ok($realization->addAcquisition($acquisition2, 200), 'Added second acquisition for 200 shares.');
+    ok($realization->addAcquisition($acquisition1), 'Added first acquisition.');
+    ok($realization->addAcquisition($acquisition2), 'Added second acquisition.');
     is($realization->acquisitionCount(), 2, 'Received expected acquisition count.');
-    ok($realization->realize(), 'Realized realization.');
-    my $profit = $realization->realized();
+    ok(my $profit = $realization->realized(), 'Got realized profit.');
     my $expectedReturn = $at1->cashEffect() + $at2->cashEffect + $at3->cashEffect();
     is($profit, $expectedReturn, "Received expected profit number: $profit.\n");
 }
@@ -58,10 +57,9 @@ ok(my $at3 = Finance::StockAccount::AccountTransaction->new($initAt3), 'Created 
         divestment      => $at3,
     };
     ok(my $realization = Finance::StockAccount::Realization->new($initRealization), 'Instantiated "250" Realization object.');
-    ok($realization->addAcquisition($acquisition1, 50), 'Added first acquisition for 100 shares.');
-    ok($realization->addAcquisition($acquisition2, 200), 'Added second acquisition for 200 shares.');
-    ok($realization->realize(), 'Realized "250" realization.');
-    my $profit = $realization->realized();
+    ok($realization->addAcquisition($acquisition1), 'Added first acquisition for 100 shares.');
+    ok($realization->addAcquisition($acquisition2), 'Added second acquisition for 200 shares.');
+    ok(my $profit = $realization->realized(), 'Realized "250" realization.');
     my $expectedReturn = ($at1->cashEffect()/2) + $at2->cashEffect + $at3->cashEffect();
     is($profit, $expectedReturn, "Received expected '250' profit number: $profit.\n");
 }

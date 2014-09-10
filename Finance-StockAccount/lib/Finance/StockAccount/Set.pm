@@ -16,19 +16,22 @@ sub new {
         accountTransactions => [],
         realizations        => [],
         success             => 0,
-        stats               =>
-            {
-                stale               => 1,
-                profit              => 0,
-                investment          => 0,
-                proceeds            => 0,
-                commissions         => 0,
-                regulatoryFees      => 0,
-                otherFees           => 0,
-                ROI                 => 0,
-                startDate           => undef,
-                endDate             => undef,
-            },
+        stats               => {
+            stale               => 1,
+            profit              => 0,
+            investment          => 0,
+            proceeds            => 0,
+            commissions         => 0,
+            regulatoryFees      => 0,
+            otherFees           => 0,
+            ROI                 => 0,
+            startDate           => undef,
+            endDate             => undef,
+        },
+        dateLimit           => {
+            start               => undef,
+            end                 => undef,
+        },
     };
     bless($self, $class);
     $init and $self->add($init);
@@ -81,6 +84,27 @@ sub add {
     return $added;
 }
 
+sub setDateLimit {
+    my ($self, $tm1, $tm2) = @_;
+    if ($tm1 > $tm2) {
+        croak "The start date must come before the end date.";
+    }
+    my $dateLimit = $self->{dateLimit};
+    $dateLimit->{start} = $tm1;
+    $dateLimit->{end}   = $tm2;
+    $self->{stats}{stale} = 1;
+    return 1;
+}
+
+sub clearDateLimit {
+    my $self = shift;
+    my $dateLimit = $self->{dateLimit};
+    $dateLimit->{start} = undef;
+    $dateLimit->{end}   = undef;
+    $self->{stats}{stale} = 1;
+    return 1;
+}
+
 sub cmpPrice {
     my ($self, $at1, $at2) = @_;
     my $p1 = $at1->{price};
@@ -119,6 +143,47 @@ sub computeRoi {
     return 1;
 }
 
+sub dateLimitPortion {
+    my ($self, $divestment, $acquisition) = @_;
+    my $dateLimit = $self->{dateLimit};
+    if (!$dateLimit->{start} or !$dateLimit->{end}) {
+        return 1;
+    }
+    else {
+        my $limitStart  = $dateLimit->{start};
+        my $limitEnd    = $dateLimit->{end};
+        my $realStart   = $acquisition->tm();
+        my $realEnd     = $divestment->tm();
+        my $startWithinLimit = ($realStart <= $limitEnd and $realStart >= $limitStart) ? 1 : 0;
+        my $endWithinLimit   = ($realEnd   <= $limitEnd and $realEnd   >= $limitStart) ? 1 : 0;
+        if ($startWithinLimit and $endWithinLimit) {
+            return 1;
+        }
+        elsif ($realStart >= $limitEnd or $realEnd <= $limitStart) {
+            return 0;
+        }
+        elsif (!$startWithinLimit and !$endWithinLimit) {
+            my $limitRangeSeconds = $limitEnd->epoch() - $limitStart->epoch();
+            my $realRangeSeconds  = $realEnd->epoch() - $realStart->epoch();
+            return $limitRangeSeconds / $realRangeSeconds;
+        }
+        elsif ($startWithinLimit) {
+            my $realRangeSeconds   = $realEnd->epoch() - $realStart->epoch();
+            my $secondsWithinLimit = $limitEnd->epoch() - $realStart->epoch();
+            return $secondsWithinLimit / $realRangeSeconds;
+        }
+        elsif ($endWithinLimit) {
+            my $realRangeSeconds   = $realEnd->epoch() - $realStart->epoch();
+            my $secondsWithinLimit = $realEnd->epoch() - $limitStart->epoch();
+            return $secondsWithinLimit / $realRangeSeconds;
+        }
+        else {
+            warn "Unexpected result from date comparisons when trying to calculate portion of realization within the given date limit.";
+            return 0;
+        }
+    }
+}
+
 sub accountPriorPurchase {
     my ($self, $index) = @_;
     if (!$self->{dateSort}) {
@@ -139,12 +204,12 @@ sub accountPriorPurchase {
         my $accounted = $priorPurchase->accountShares($sharesDivested);
         if ($accounted) {
             my $acquisition = Finance::StockAccount::Acquisition->new($priorPurchase, $accounted);
-            $realization->addAcquisition($acquisition, $accounted);
+            my $dateLimitPortion = $self->dateLimitPortion($divestment, $acquisition);
+            $realization->addAcquisition($acquisition, $dateLimitPortion);
             $divestment->accountShares($accounted);
         }
     }
     if ($realization->acquisitionCount()) {
-        $realization->realize();
         push(@{$self->{realizations}}, $realization);
         $self->startDate($realization->startDate());
         $self->endDate($realization->endDate());

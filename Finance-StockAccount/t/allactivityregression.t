@@ -16,8 +16,8 @@ my $allFile2014 = 'dlAllActivity201409.csv';
     ok($sa->ROI() =~ /^0\.62/, 'Got expected ROI.');
     ok($sa->meanAnnualProfit() =~ /^4259\./, 'Got mean annual profit.');
     ok($sa->meanAnnualROI() =~ /^0\.26/, 'Got mean annual ROI.');
-    ok($sa->commissions() =~ /^1038\.2/, 'Got expected commissions total.');
-    ok($sa->regulatoryFees() =~ /^2\.42/, 'Got expected regulatory fees total.');
+    ok($sa->commissions() =~ /^976\.0/, 'Got expected commissions total.'); # old value 1038.2
+    ok($sa->regulatoryFees() =~ /^2\.38/, 'Got expected regulatory fees total.'); # old value 2.42
     is($sa->otherFees(), 0, 'Got expected other fees total.');
 }
 

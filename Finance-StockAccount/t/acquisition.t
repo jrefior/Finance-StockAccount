@@ -18,7 +18,7 @@ use_ok('Finance::StockAccount::Acquisition');
     ok(my $acquisition = Finance::StockAccount::Acquisition->new($at, $shares), 'Instantiated new Acquisition object.');
     is($at->cashEffect(), -1588, 'Got expected cash effect.');
     is($acquisition->cashEffect(), -794, 'Got expected proportion of cash effect.');
-    is($acquisition->feesAndCommissions(), 5, 'Got expected proportion of fees and commissions.');
+    is($acquisition->commission(), 5, 'Got expected commission.');
 }
 
 
