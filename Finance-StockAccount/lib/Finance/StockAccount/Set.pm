@@ -16,18 +16,7 @@ sub new {
         accountTransactions => [],
         realizations        => [],
         success             => 0,
-        stats               => {
-            stale               => 1,
-            profit              => 0,
-            investment          => 0,
-            proceeds            => 0,
-            commissions         => 0,
-            regulatoryFees      => 0,
-            otherFees           => 0,
-            ROI                 => 0,
-            startDate           => undef,
-            endDate             => undef,
-        },
+        stats               => getNewStatsHash(),
         dateLimit           => {
             start               => undef,
             end                 => undef,
@@ -36,6 +25,21 @@ sub new {
     bless($self, $class);
     $init and $self->add($init);
     return $self;
+}
+
+sub getNewStatsHash {
+    return {
+        stale               => 1,
+        profit              => 0,
+        investment          => 0,
+        proceeds            => 0,
+        commissions         => 0,
+        regulatoryFees      => 0,
+        otherFees           => 0,
+        ROI                 => 0,
+        startDate           => undef,
+        endDate             => undef,
+    };
 }
 
 sub realizationCount {
@@ -82,6 +86,19 @@ sub add {
         $self->{dateSort} = 0;
     }
     return $added;
+}
+
+sub clearPastAccounting {
+    my $self = shift;
+    my $accountTransactions = $self->{accountTransactions};
+    for (my $x=0; $x<scalar(@$accountTransactions); $x++) {
+        my $at = $accountTransactions->[$x];
+        $at->resetAccounted();
+    }
+    $self->{realizations} = [];
+    $self->{stats} = $self->getNewStatsHash();
+    $self->{success} = 0;
+    return 1;
 }
 
 sub setDateLimit {
@@ -134,12 +151,6 @@ sub printTransactionDates {
     my $self = shift;
     my $transactionDates = $self->transactionDates();
     print join(', ', map { $_->to_string() } @$transactionDates), "\n";
-    return 1;
-}
-
-sub computeRoi {
-    my $self = shift;
-    $self->{stats}{ROI} = $self->{stats}{profit} / $self->{stats}{investment};
     return 1;
 }
 
@@ -209,17 +220,18 @@ sub accountPriorPurchase {
             $divestment->accountShares($accounted);
         }
     }
+
     if ($realization->acquisitionCount()) {
         push(@{$self->{realizations}}, $realization);
         $self->startDate($realization->startDate());
         $self->endDate($realization->endDate());
-        $self->{stats}{profit} += $realization->realized();
-        $self->{stats}{investment} += $realization->costBasis();
-        $self->{stats}{proceeds} += $realization->proceeds();
-        $self->{stats}{commissions} += $realization->commissions();
-        $self->{stats}{regulatoryFees} += $realization->regulatoryFees();
-        $self->{stats}{otherFees} += $realization->otherFees();
-        $self->computeRoi();
+        my $stats = $self->{stats};
+        $stats->{profit} += $realization->realized();
+        $stats->{investment} += $realization->costBasis();
+        $stats->{proceeds} += $realization->proceeds();
+        $stats->{commissions} += $realization->commissions();
+        $stats->{regulatoryFees} += $realization->regulatoryFees();
+        $stats->{otherFees} += $realization->otherFees();
         $self->{success} = 1;
         return 1;
     }
@@ -291,6 +303,11 @@ sub endDate {
     }
 }
 
+sub roi {
+    my $self = shift;
+    my $stats = $self->{stats};
+    return $stats->{profit} / $stats->{investment};
+}
 
 sub profit              { return shift->{stats}{profit}                 };
 sub investment          { return shift->{stats}{investment}             };
@@ -298,7 +315,6 @@ sub proceeds            { return shift->{stats}{proceeds}               };
 sub commissions         { return shift->{stats}{commissions}            };
 sub regulatoryFees      { return shift->{stats}{regulatoryFees}         };
 sub otherFees           { return shift->{stats}{otherFees}              };
-sub roi                 { return shift->{stats}{ROI}                    };
 sub success             { return shift->{success}                       };
 sub realizations        { return shift->{realizations}                  };
 

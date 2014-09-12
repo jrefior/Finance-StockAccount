@@ -23,6 +23,12 @@ sub accounted {
     }
 }
 
+sub resetAccounted {
+    my $self = shift;
+    $self->{accounted} = 0;
+    return 1;
+}
+
 sub available {
     my $self = shift;
     my $available = $self->{quantity} - $self->{accounted};
