@@ -244,6 +244,7 @@ sub accountPriorPurchase {
 
 sub accountSales {
     my $self = shift;
+    $self->clearPastAccounting();
     if (!$self->{dateSort}) {
         $self->dateSort();
     }
@@ -303,20 +304,74 @@ sub endDate {
     }
 }
 
+sub checkStats {
+    my $self = shift;
+    if ($self->{stats}{stale}) {
+        $self->accountSales();
+    }
+    return 1;
+}
+
 sub roi {
     my $self = shift;
     my $stats = $self->{stats};
     return $stats->{profit} / $stats->{investment};
 }
 
-sub profit              { return shift->{stats}{profit}                 };
-sub investment          { return shift->{stats}{investment}             };
-sub proceeds            { return shift->{stats}{proceeds}               };
-sub commissions         { return shift->{stats}{commissions}            };
-sub regulatoryFees      { return shift->{stats}{regulatoryFees}         };
-sub otherFees           { return shift->{stats}{otherFees}              };
-sub success             { return shift->{success}                       };
-sub realizations        { return shift->{realizations}                  };
+
+sub profit {
+    my $self = shift;
+    $self->checkStats();
+    return $self->{stats}{profit};
+}
+
+sub investment {
+    my $self = shift;
+    $self->checkStats();
+    return $self->{stats}{investment};
+}
+
+sub proceeds {
+    my $self = shift;
+    $self->checkStats();
+    return $self->{stats}{proceeds};
+}
+
+sub commissions {
+    my $self = shift;
+    $self->checkStats();
+    return $self->{stats}{commissions};
+}
+
+sub regulatoryFees {
+    my $self = shift;
+    $self->checkStats();
+    return $self->{stats}{regulatoryFees};
+}
+
+sub otherFees {
+    my $self = shift;
+    $self->checkStats();
+    return $self->{stats}{otherFees};
+}
+
+sub success {
+    my $self = shift;
+    $self->checkStats();
+    return $self->{stats}{success};
+}
+
+sub realizations {
+    my $self = shift;
+    $self->checkStats();
+    return $self->{stats}{realizations};
+}
+
+
+
+
+
+
 
 
 1;
