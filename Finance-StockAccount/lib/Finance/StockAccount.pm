@@ -319,6 +319,49 @@ sub getStats {
     }
 }
 
+sub annualStats {
+    my $self = shift;
+    my ($investment, $profit, $commissions, $regulatoryFees, $otherFees, $setCount) = (0, 0, 0, 0, 0, 0);
+    $self->getStats();
+    my $stats       = $self->{stats};
+    my $startDate   = $stats->{startDate};
+    my $endDate     = $stats->{endDate};
+    my $offset      = $startDate->offset();
+    foreach my $year ($startDate->year() .. $endDate->year()) {
+        my $yearStart = Time::Moment->new(
+            year       => $year,
+            month      => 1,
+            day        => 1,
+            hour       => 0,
+            minute     => 0,
+            second     => 01,
+            nanosecond => 0,
+            offset     => $offset,
+        );
+        my $yearEnd   = Time::Moment->new(
+            year       => $year,
+            month      => 12,
+            day        => 31,
+            hour       => 23,
+            minute     => 59,
+            second     => 59,
+            nanosecond => 0,
+            offset     => $offset,
+        );
+        foreach my $hashKey (keys %{$self->{sets}}) {
+            my $set = $self->getSet($hashKey);
+            $set->setDateLimit($yearStart, $yearEnd);
+            $set = $self->getSetFiltered($hashKey);
+            $setCount++;
+
+
+
+
+
+        }
+    }
+}
+
 sub profit {
     my $self = shift;
     $self->getStats();

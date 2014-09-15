@@ -318,7 +318,6 @@ sub roi {
     return $stats->{profit} / $stats->{investment};
 }
 
-
 sub profit {
     my $self = shift;
     $self->checkStats();
@@ -364,7 +363,7 @@ sub success {
 sub realizations {
     my $self = shift;
     $self->checkStats();
-    return $self->{stats}{realizations};
+    return $self->{realizations};
 }
 
 

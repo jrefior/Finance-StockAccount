@@ -110,6 +110,7 @@ use_ok('Finance::StockAccount::Set');
     ok($set->setDateLimit($tm1, $tm2), 'Set date limit.');
     is($set->profit(), 178, 'Got expected profit where date limit includes entire realization range.');
     
+    ### adjusting date limit ending
     $tm2 = Time::Moment->from_string("20120731T000000Z");
     ok($set->setDateLimit($tm1, $tm2), 'Moved the date limit ending to early within the realization range.');
     ok($set->profit() < 10, 'Profit within expected range where date limit ends early in the realization range.');
@@ -124,6 +125,7 @@ use_ok('Finance::StockAccount::Set');
     $profit = $set->profit();
     ok($profit > 160 && $profit < 178, 'Profit within expected range where date limit ending is near the end of the realization range.');
 
+    ### adjusting date limit start
     $tm1 = Time::Moment->from_string("20121005T000000Z");
     $tm2 = Time::Moment->from_string("20121121T000000Z");
     ok($set->setDateLimit($tm1, $tm2), 'Moved the date limit start to very late within the realization range.');
@@ -142,21 +144,30 @@ use_ok('Finance::StockAccount::Set');
     ### date limit range is entirely within realization range
     $tm2 = Time::Moment->from_string("20121005T000000Z");
     ok($set->setDateLimit($tm1, $tm2), 'Moved the date limit end to near the end of the realization range.');
-    ok($set->accountSales(), 'Accounted sales again.');
     $profit = $set->profit();
-    ok($profit > 150  && $profit < 174, 'Profit within expected range where date limit range is entirely within and slightly smaller than realization range.');
+    ok($profit > 160  && $profit < 174, 'Profit within expected range where date limit range is entirely within and slightly smaller than realization range.');
+
+    $tm1 = Time::Moment->from_string("20120808T000000Z");
+    $tm2 = Time::Moment->from_string("20120929T000000Z");
+    ok($set->setDateLimit($tm1, $tm2), 'Shrak the date limit range within the realization range.');
+    $profit = $set->profit();
+    ok($profit > 140  && $profit < 150, 'Profit within expected range.');
+
+    $tm1 = Time::Moment->from_string("20120912T000000Z");
+    $tm2 = Time::Moment->from_string("20120915T000000Z");
+    ok($set->setDateLimit($tm1, $tm2), 'Shrank the date limit range within the realization range to quite small.');
+    $profit = $set->profit();
+    ok($profit > 4  && $profit < 16, 'Profit within expected range.');
 
     ### ranges don't overlap
     $tm1 = Time::Moment->from_string("20121007T000000Z");
     $tm2 = Time::Moment->from_string("20121121T000000Z");
     ok($set->setDateLimit($tm1, $tm2), 'Moved the date limit start to after the end of the realization range.');
-    ok($set->accountSales(), 'Accounted sales again.');
     is($set->profit(), 0, 'Profit zero where date limit starts after the end of the realization range.');
 
     $tm1 = Time::Moment->from_string("20120521T090000Z");
     $tm2 = Time::Moment->from_string("20120715T230000Z");
     ok($set->setDateLimit($tm1, $tm2), 'Moved the date limit end to before the start of the realization range.');
-    ok($set->accountSales(), 'Accounted sales again.');
     is($set->profit(), 0, 'Profit zero where date limit ends before the start of the realization range.');
 }
 
