@@ -21,6 +21,7 @@ sub new {
             start               => undef,
             end                 => undef,
         },
+        verbose             => 0,
     };
     bless($self, $class);
     $init and $self->add($init);
@@ -221,7 +222,7 @@ sub accountPriorPurchase {
         }
     }
 
-    if ($realization->acquisitionCount()) {
+    if ($realization->acquisitionCount() and ($realization->costBasis() or $realization->proceeds())) {
         push(@{$self->{realizations}}, $realization);
         $self->startDate($realization->startDate());
         $self->endDate($realization->endDate());
@@ -237,7 +238,7 @@ sub accountPriorPurchase {
     }
     else {
         my $symbol = $divestment->symbol();
-        print "[Info] Unable to account for sold shares of symbol $symbol at index $index. There is no acquisition that matches this divestment.\n";
+        $self->{verbose} and print "[Info] Unable to account for sold shares of symbol $symbol at index $index. There is no acquisition that matches this divestment.\n";
         return 0;
     }
 }
