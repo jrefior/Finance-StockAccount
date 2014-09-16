@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Carp;
+use POSIX;
 
 use Finance::StockAccount::Set;
 use Finance::StockAccount::AccountTransaction;
@@ -215,6 +216,20 @@ sub emptyStats {
     return 1;
 }
 
+sub calculateMinInvestment {
+    my ($self, $realizations) = @_;
+    my @allTransactions = sort { $a->tm() <=> $b->tm() } map { @{$_->acquisitions()}, $_->divestment() } @$realizations;
+    @$realizations = ();
+    my ($total, $max) = (0, 0);
+    for (my $x=0; $x<scalar(@allTransactions); $x++) {
+        my $transaction = $allTransactions[$x];
+        $total += 0 - $transaction->cashEffect();
+        $total > $max and $max = $total;
+    }
+    @allTransactions = ();
+    return $max;
+}
+
 sub calculateStats {
     my $self = shift;
     my ($investment, $profit, $commissions, $regulatoryFees, $otherFees) = (0, 0, 0, 0, 0);
@@ -269,7 +284,7 @@ sub calculateStats {
             $stats->{otherFees} = $otherFees;
             $stats->{meanROI} = $meanROI;
             $stats->{startDate} = $startDate;
-            $stats->{endDate} = $startDate;
+            $stats->{endDate} = $endDate;
             my $secondsInYear = 60 * 60 * 24 * 365.25;
             my $secondsInAccount = $endDate->epoch() - $startDate->epoch();
             if (!$secondsInAccount) {
@@ -278,17 +293,9 @@ sub calculateStats {
             my $annualRatio = $secondsInYear / $secondsInAccount;
             $stats->{meanAnnualProfit} = $profit * $annualRatio;
 
-            my @allTransactions = sort { $a->tm() <=> $b->tm() } map { @{$_->acquisitions()}, $_->divestment() } @allRealizations;
-            @allRealizations = ();
-            my ($total, $max) = (0, 0);
-            for (my $x=0; $x<scalar(@allTransactions); $x++) {
-                my $transaction = $allTransactions[$x];
-                $total += 0 - $transaction->cashEffect();
-                $total > $max and $max = $total;
-            }
-            @allTransactions = ();
-            $stats->{minInvestment} = $max;
-            my $ROI = $profit / $max;
+            my $minInvestment = $self->calculateMinInvestment(\@allRealizations);
+            $stats->{minInvestment} = $minInvestment;
+            my $ROI = $profit / $minInvestment;
             $stats->{ROI} = $ROI;
             $stats->{meanAnnualROI} = $ROI * $annualRatio;
 
@@ -319,14 +326,48 @@ sub getStats {
     }
 }
 
+sub statsForPeriod {
+    my ($self, $tm1, $tm2) = @_;
+    my ($investment, $profit, $commissions, $regulatoryFees, $otherFees) = (0, 0, 0, 0, 0);
+    my @allRealizations = ();
+    my $setCount = 0;
+    foreach my $hashKey (keys %{$self->{sets}}) {
+        my $set = $self->getSet($hashKey);
+        $set->setDateLimit($tm1, $tm2);
+        $set = $self->getSetFiltered($hashKey);
+        if ($set) {
+            $setCount++;
+            $investment     += $set->investment();
+            $profit         += $set->profit();
+            $commissions    += $set->commissions();
+            $regulatoryFees += $set->regulatoryFees();
+            $otherFees      += $set->otherFees();
+            push(@allRealizations, @{$set->realizations()});
+        }
+    }
+    if ($setCount > 0) {
+        if ($investment) {
+            my $minInvestment = $self->calculateMinInvestment(\@allRealizations);
+            my $yearStats = {
+                minInvestment   => $minInvestment,
+                profit          => $profit,
+                ROI             => $profit / $minInvestment,
+                commissions     => $commissions,
+                regulatoryFees  => $regulatoryFees,
+                otherFees       => $otherFees,
+            };
+        }
+    }
+}
+
 sub annualStats {
     my $self = shift;
-    my ($investment, $profit, $commissions, $regulatoryFees, $otherFees, $setCount) = (0, 0, 0, 0, 0, 0);
     $self->getStats();
     my $stats       = $self->{stats};
     my $startDate   = $stats->{startDate};
     my $endDate     = $stats->{endDate};
     my $offset      = $startDate->offset();
+    my $annualStats = [];
     foreach my $year ($startDate->year() .. $endDate->year()) {
         my $yearStart = Time::Moment->new(
             year       => $year,
@@ -348,18 +389,42 @@ sub annualStats {
             nanosecond => 0,
             offset     => $offset,
         );
-        foreach my $hashKey (keys %{$self->{sets}}) {
-            my $set = $self->getSet($hashKey);
-            $set->setDateLimit($yearStart, $yearEnd);
-            $set = $self->getSetFiltered($hashKey);
-            $setCount++;
-
-
-
-
-
-        }
+        my $yearStats = $self->statsForPeriod($yearStart, $yearEnd);
+        $yearStats->{year} = $year;
+        push(@$annualStats, $yearStats);
     }
+    return $annualStats;
+}
+
+sub quarterlyStats {
+    my $self = shift;
+    $self->getStats();
+    my $quarterlyStats = [];
+    my $stats       = $self->{stats};
+    my $startDate   = $stats->{startDate};
+    my $endDate     = $stats->{endDate};
+    my $offset      = $startDate->offset();
+    my $startYear   = $startDate->year();
+    my $startQuarter  = ceil($startDate->month()/3);
+    my $currDate = Time::Moment->new(
+        year       => $startYear,
+        month      => ($startQuarter - 1) * 3 + 1,
+        day        => 1,
+        hour       => 0,
+        minute     => 0,
+        second     => 01,
+        nanosecond => 0,
+        offset     => $offset,
+    );
+    while ($currDate < $endDate) {
+        my $quarterEnd   = $currDate->plus_months(3);
+        my $quarterStats = $self->statsForPeriod($currDate, $quarterEnd);
+        $quarterStats->{year}    = $currDate->year();
+        $quarterStats->{quarter} = ceil($currDate->month()/3);
+        push(@$quarterlyStats, $quarterStats);
+        $currDate = $quarterEnd;
+    }
+    return $quarterlyStats;
 }
 
 sub profit {
