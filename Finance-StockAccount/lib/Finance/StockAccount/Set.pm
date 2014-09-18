@@ -33,7 +33,7 @@ sub getNewStatsHash {
         stale               => 1,
         profit              => 0,
         investment          => 0,
-        proceeds            => 0,
+        revenue             => 0,
         commissions         => 0,
         regulatoryFees      => 0,
         otherFees           => 0,
@@ -222,17 +222,17 @@ sub accountPriorPurchase {
         }
     }
 
-    if ($realization->acquisitionCount() and ($realization->costBasis() or $realization->proceeds())) {
+    if ($realization->acquisitionCount() and ($realization->costBasis() or $realization->revenue())) {
         push(@{$self->{realizations}}, $realization);
         $self->startDate($realization->startDate());
         $self->endDate($realization->endDate());
         my $stats = $self->{stats};
-        $stats->{profit} += $realization->realized();
-        $stats->{investment} += $realization->costBasis();
-        $stats->{proceeds} += $realization->proceeds();
-        $stats->{commissions} += $realization->commissions();
-        $stats->{regulatoryFees} += $realization->regulatoryFees();
-        $stats->{otherFees} += $realization->otherFees();
+        $stats->{profit}            += $realization->realized();
+        $stats->{investment}        += $realization->costBasis();
+        $stats->{revenue}           += $realization->revenue();
+        $stats->{commissions}       += $realization->commissions();
+        $stats->{regulatoryFees}    += $realization->regulatoryFees();
+        $stats->{otherFees}         += $realization->otherFees();
         $self->{success} = 1;
         return 1;
     }
@@ -331,10 +331,10 @@ sub investment {
     return $self->{stats}{investment};
 }
 
-sub proceeds {
+sub revenue {
     my $self = shift;
     $self->checkStats();
-    return $self->{stats}{proceeds};
+    return $self->{stats}{revenue};
 }
 
 sub commissions {

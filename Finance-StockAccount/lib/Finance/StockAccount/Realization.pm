@@ -16,7 +16,7 @@ sub new {
         divestment          => undef,
         acquisitions        => [],
         costBasis           => 0,
-        proceeds            => 0,
+        revenue             => 0,
         realized            => 0,
         commissions         => 0,
         regulatoryFees      => 0,
@@ -49,10 +49,10 @@ sub addAcquisition {
     my $divOtherFees      += $divestedPortion * $divestment->otherFees();
 
     my $costBasis = 0 - $dateLimitPortion * $acquisition->cashEffect();
-    my $proceeds  = $dateLimitPortion * $divestedPortion * $divestment->cashEffect();
+    my $revenue   = $dateLimitPortion * $divestedPortion * $divestment->cashEffect();
     $self->{costBasis}      += $costBasis;
-    $self->{proceeds}       += $proceeds;
-    $self->{realized}       += $proceeds - $costBasis;
+    $self->{revenue}        += $revenue;
+    $self->{realized}       += $revenue - $costBasis;
     $self->{commissions}    += $dateLimitPortion * ($acquisition->commission()     + $divCommission    );
     $self->{regulatoryFees} += $dateLimitPortion * ($acquisition->regulatoryFees() + $divRegulatoryFees);
     $self->{otherFees}      += $dateLimitPortion * ($acquisition->otherFees()      + $divOtherFees     );
@@ -136,7 +136,7 @@ sub endDate {
 sub divestment          { return shift->{divestment};           }
 sub acquisitions        { return shift->{acquisitions};         }
 sub costBasis           { return shift->{costBasis};            }
-sub proceeds            { return shift->{proceeds};             }
+sub revenue             { return shift->{revenue};              }
 sub realized            { return shift->{realized};             }
 sub commissions         { return shift->{commissions};          }
 sub regulatoryFees      { return shift->{regulatoryFees};       }

@@ -63,7 +63,7 @@ use_ok('Finance::StockAccount::Set');
     ok($set->printTransactionDates(), 'Print transaction dates.');
     ok($set->accountSales(), 'Accounted for sales.');
     is($set->investment(), 3673, 'Cost (investment) as expected.');
-    is($set->proceeds(), 4040, 'Benefit (proceeds) as expected.');
+    is($set->revenue(), 4040, 'Benefit (revenue) as expected.');
     is($set->profit(), 367, 'Profit as expected.');
     ok($set->roi() =~ /^0\.0999/, 'ROI as expected.');
     ok($set->startDate() == $tm1, 'Got expected start date.');
