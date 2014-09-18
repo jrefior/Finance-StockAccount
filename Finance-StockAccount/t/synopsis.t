@@ -54,7 +54,6 @@ use Test::More;
     my $ROI                 = $sa->ROI();               # 0.17
     my $meanAnnualProfit    = $sa->meanAnnualProfit();  # 31046.25
 
-
     is($profit, 340, 'Got expected profit.');
     is($investment, 2000, 'Got expected minimum investment required to reach that profit.');
     is($ROI, 0.17, 'Got expected ROI.');

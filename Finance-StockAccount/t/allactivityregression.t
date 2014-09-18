@@ -36,9 +36,9 @@ my $printQuarterlyStats = 0;
     ok(my $quarterlyStats = $sa->quarterlyStats(), 'Calculated quarterly stats.');
     ok($quarterlyStats->[4]{minInvestment} =~ /^13326\./, 'Got expected minInvestment for the fifth quarterly stats calculation.');
     if ($printQuarterlyStats) {
-        foreach my $first (@$quarterlyStats) {
-            printf("%4d %1d %6.3f %6.2f %-1.4f %-4.2f %-2.2f %-2.2f\n", $first->{year}, $first->{quarter},
-                $first->{minInvestment}, $first->{profit}, $first->{ROI}, $first->{commissions}, $first->{regulatoryFees}, $first->{otherFees});
+        foreach my $quarter (@$quarterlyStats) {
+            printf("%4d %1d %6.3f %6.2f %-1.4f %-4.2f %-2.2f %-2.2f\n", $quarter->{year}, $quarter->{quarter},
+                $quarter->{minInvestment}, $quarter->{profit}, $quarter->{ROI}, $quarter->{commissions}, $quarter->{regulatoryFees}, $quarter->{otherFees});
         }
     }
 }

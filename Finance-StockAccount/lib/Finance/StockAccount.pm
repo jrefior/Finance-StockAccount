@@ -1,4 +1,5 @@
 package Finance::StockAccount;
+# see pod at end of file for documentation
 
 use strict;
 use warnings;
@@ -10,6 +11,8 @@ use Finance::StockAccount::Set;
 use Finance::StockAccount::AccountTransaction;
 use Finance::StockAccount::Stock;
 
+our $VERSION = '0.01';
+
 sub new {
     my ($class, $options) = @_;
     my $self = {
@@ -19,6 +22,7 @@ sub new {
             stale               => 1,
             startDate           => undef,
             endDate             => undef,
+            sumAcquisitionCosts => undef,
             investment          => undef,
             minInvestment       => undef,
             profit              => undef,
@@ -477,6 +481,9 @@ sub otherFees {
 }
 
 
+__END__
+
+
 =head1 NAME
 
 Finance::StockAccount - Analyze past transactions in a personal stock account.
@@ -487,14 +494,17 @@ Version 0.01
 
 =cut
 
-our $VERSION = '0.01';
 
 
 =head1 SYNOPSIS
 
-Analyze past transactions in a personal stock account.  Get total profit, mean
-annual profit, minimum investment that was required to reach that profit, return
-on investment compared to that minimum, etc.
+Analyze past transactions in a personal stock account.  Find out your profit,
+annual profit, quarterly profit, monthly profit, or profit for any other
+arbitrary date/time range.  Discover what the most cash you had invested in
+stocks was, over the course of your account from when it opened to the present,
+or for any period.  Call that your investment and learn how the ratio of profit
+to that investment changed from period to period.  Find out how much you spent
+on commissions in a year.
 
 Perhaps a little code snippet.
 
@@ -503,19 +513,30 @@ Perhaps a little code snippet.
     my $foo = Finance::StockAccount->new();
     ...
 
-Currently understood transaction types include buy, sell, short, and cover.
+My online brokerage account does not allow the user to easily see how her stock
+account is performing.  With a little research, I found this was common
+practice with both online and offline brokerages, as well as financial
+advisers.  So I wrote this software to find out my actual account performance
+and shared it so others could find out theirs.
 
-Accounting is done by what I call the Greatest Realized Benefit (GRB) method:
-divestments (sales or covers) are processed from oldest to newest, and one or
-more prior acquisitions (buys or shorts) are matched with the sale by
-availability (meaning not all shares are already tied to another divestment) and
-lowest cost of the acquisition.
+This is a pure stock-transaction based set of modules.  Currently understood
+transaction types include buy, sell, short, and cover.  This version (version
+0.01) does not consider cash or dividends, but I would like to add those
+features in future releases.  Because of that limitation, calculations cannot
+be based purely on cash -- but rather on appreciation and depreciation of
+stocks, and timing of transactions -- which gives an interesting (and I think
+useful) perspective on account performance.
 
-I looked at the "Analyze" tools in my OptionsXpress online brokerage account
-and saw it always used a "Last In, First Out" accounting method, which is
-ridiculous and was unacceptable to me so I wrote this software to find out my
-actual account performance, the one that matched my primary intention when
-trading which was usually to realize as much gain as possible.
+By default, accounting is done by what I call the Greatest Realized Benefit
+(GRB) method: divestments (sales or covers) are processed from oldest to
+newest, and one or more prior acquisitions (buys or shorts) are matched with
+the sale by availability (meaning not all shares are already tied to another
+divestment) and lowest cost of the acquisition.
+
+I also looked at the "Analyze" tools in my OptionsXpress online brokerage
+account and saw it always used a "Last In, First Out" accounting method, which
+is ridiculous and was unacceptable to me.   .the one that matched my primary
+intention when trading which was usually to realize as much gain as possible.
 
 Dates are stored as Time::Moment objects, and may be specified either as a
 Time::Moment object or one of the string formats natively understood by
@@ -533,6 +554,54 @@ Finance::StockAccount::Transaction
 Finance::StockAccount::Stock
 
 for those.
+
+=head1 EXPLANATION
+
+This set of modules is intented to give the lay investor (as opposed to the
+high finance wall street type who already has a bunch of expensive tools
+available to him) a meaninful sense of how his or her personal stock account is
+doing.  It turns out a lot of both online and offline brokerages and financial
+advisers and institutions hide that information from their users on the theory
+that if you knew how poorly you were really doing, you would take your money
+elsewhere, or bug them with questions and demands for improvement.
+
+With these modules you can get a better understanding of the performance of
+your personal stock account.  Here's what you do: Create a new stock account
+object, add your past stock transactions to it, and get statistics and
+information from it.  You can set arbitrary date limits, to constrain that
+information to a certain period, or use built in methods for yearly, quarterly,
+or monthly data.
+
+This set of modules deals purely in stock transactions.  There is no concept of
+cash transactions.  Currently there is not even a concept of dividends, though
+I intend to add that.  So far it is purely concerned with acquisitions and
+divestments: their timing, value, and relative value.
+
+=head2 Terminology
+
+=head4 Acquisition
+
+A stock transaction of the type 'buy' or 'short'.  This is where the consumer
+(or user) spends cash to gain an interest in some number of shares of a stock,
+buying it if she expects it to go up, shorting it if she expects it to go down.
+
+An acquisition, or part of an acquisition, becomes the cost basis for a later
+divestment.
+
+=head4 Divestment
+
+A stock transaction of the type 'sell' or 'cover'.  This is where the consumer
+sells her interest in a stock in return for cash, terminating the interest
+gained in an earlier acquisition for some number of shares and gaining cash as
+a result.
+
+=head4 Realization
+
+These modules attempt to match each divestment against one or more prior
+acquisition(s), and use that match to calculate profit and other statistics
+useful for evaluating stock account performance.  A successful match between a
+divestment and one or more acquisitions is called a "realization" because it
+represents the consummation or realization of the investment.
 
 =head1 METHODS
 
@@ -717,19 +786,6 @@ or or check the value with the same method and no arguments:
 
 As mentioned above, it can also be set using the new method, described above.
 
-
-=cut
-
-sub function1 {
-}
-
-=head2 function2
-
-=cut
-
-sub function2 {
-}
-
 =head1 AUTHOR
 
 John Everett Refior, C<< <jrefior at gmail.com> >>
@@ -740,15 +796,11 @@ Please report any bugs or feature requests to C<bug-finance-stockaccount at rt.c
 the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Finance-StockAccount>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
 
-
-
-
 =head1 SUPPORT
 
 You can find documentation for this module with the perldoc command.
 
     perldoc Finance::StockAccount
-
 
 You can also look for information at:
 
@@ -772,9 +824,11 @@ L<http://search.cpan.org/dist/Finance-StockAccount/>
 
 =back
 
-
 =head1 ACKNOWLEDGEMENTS
 
+I would like to thank the Perl Monks for contributing their wisdom when I
+posted questions about how to handle date/time and whether there was already a
+module capable of doing what I planned.
 
 =head1 LICENSE AND COPYRIGHT
 
