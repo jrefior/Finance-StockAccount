@@ -15,9 +15,10 @@ my $printQuarterlyStats = 0;
     ok(my $sa = $ox->stockAccount(), 'Read file into stock account object.');
     ok($sa->profit() =~ /^9960\.08/, 'Got expected profit.');
     ok($sa->maxCashInvested() =~ /^15989\./, 'Got expected max cash invested.');
-    ok($sa->ROI() =~ /^0\.62/, 'Got expected ROI.');
+    ok($sa->profitOverOutlays() =~ /^0\.62/, 'Got expected profit over outlays.');
     ok($sa->meanAnnualProfit() =~ /^4259\./, 'Got mean annual profit.');
-    ok($sa->meanAnnualROI() =~ /^0\.26/, 'Got mean annual ROI.');
+    ok($sa->meanAnnualProfitOverOutlays() =~ /^0\.041/, 'Got expected mean annual profit over outlays.');
+    ok($sa->meanAnnualProfitOverMaxCashInvested() =~ /^0\.26/, 'Got expected mean annual profit over max cash invested.');
     ok($sa->commissions() =~ /^976\.0/, 'Got expected commissions total.'); # old value 1038.2
     ok($sa->regulatoryFees() =~ /^2\.38/, 'Got expected regulatory fees total.'); # old value 2.42
     is($sa->otherFees(), 0, 'Got expected other fees total.');

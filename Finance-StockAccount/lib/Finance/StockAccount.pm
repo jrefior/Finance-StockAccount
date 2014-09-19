@@ -23,14 +23,13 @@ sub new {
             startDate           => undef,
             endDate             => undef,
             totalOutlays        => undef,
-            maxCashInvested     => undef,
+            totalRevenues       => undef,
             profit              => undef,
+            maxCashInvested     => undef,
             commissions         => undef,
             regulatoryFees      => undef,
             otherFees           => undef,
-            ROI                 => undef,
-            meanAnnualROI       => undef,
-            meanAnnualProfit    => undef,
+            annualRatio         => undef,
         },
         allowZeroPrice      => 0,
     };
@@ -205,17 +204,15 @@ sub staleSets {
 sub emptyStats {
     my $self = shift;
     my $stats = $self->{stats};
-    $stats->{startDate}           = undef;
-    $stats->{endDate}             = undef;
-    $stats->{totalOutlays}        = undef;
-    $stats->{maxCashInvested}     = undef;
-    $stats->{profit}              = undef;
-    $stats->{commissions}         = undef;
-    $stats->{regulatoryFees}      = undef;
-    $stats->{otherFees}           = undef;
-    $stats->{ROI}                 = undef;
-    $stats->{meanAnnualROI}       = undef;
-    $stats->{meanAnnualProfit}    = undef;
+    $stats->{startDate}                   = undef;
+    $stats->{endDate}                     = undef;
+    $stats->{totalOutlays}                = undef;
+    $stats->{maxCashInvested}             = undef;
+    $stats->{profit}                      = undef;
+    $stats->{commissions}                 = undef;
+    $stats->{regulatoryFees}              = undef;
+    $stats->{otherFees}                   = undef;
+    $stats->{annualRatio}                 = undef;
     return 1;
 }
 
@@ -278,14 +275,14 @@ sub calculateStats {
     if ($setCount > 0) {
         if ($totalOutlays) {
 
-            my $meanROI = $profit / $totalOutlays;
+            my $profitOverOutlays = $profit / $totalOutlays;
             my $stats = $self->{stats};
             $stats->{totalOutlays} = $totalOutlays;
             $stats->{profit} = $profit;
             $stats->{commissions} = $commissions;
             $stats->{regulatoryFees} = $regulatoryFees;
             $stats->{otherFees} = $otherFees;
-            $stats->{meanROI} = $meanROI;
+            $stats->{profitOverOutlays} = $profitOverOutlays;
             $stats->{startDate} = $startDate;
             $stats->{endDate} = $endDate;
             my $secondsInYear = 60 * 60 * 24 * 365.25;
@@ -293,15 +290,9 @@ sub calculateStats {
             if (!$secondsInAccount) {
                 croak "No time passed in account? Can't calculate time-related stats.";
             }
-            my $annualRatio = $secondsInYear / $secondsInAccount;
-            $stats->{meanAnnualProfit} = $profit * $annualRatio;
-
+            $stats->{annualRatio} = $secondsInYear / $secondsInAccount;
             my $maxCashInvested = $self->calculateMaxCashInvested(\@allRealizations);
             $stats->{maxCashInvested} = $maxCashInvested;
-            my $ROI = $profit / $maxCashInvested;
-            $stats->{ROI} = $ROI;
-            $stats->{meanAnnualROI} = $ROI * $annualRatio;
-
             $stats->{stale} = 0;
 
             return 1;
@@ -352,12 +343,12 @@ sub statsForPeriod {
         if ($totalOutlays) {
             my $maxCashInvested = $self->calculateMaxCashInvested(\@allRealizations);
             my $yearStats = {
-                maxCashInvested => $maxCashInvested,
-                profit          => $profit,
-                ROI             => $profit / $maxCashInvested,
-                commissions     => $commissions,
-                regulatoryFees  => $regulatoryFees,
-                otherFees       => $otherFees,
+                maxCashInvested             => $maxCashInvested,
+                profit                      => $profit,
+                profitOverOutlays           => $profit / $totalOutlays,
+                profitOverMaxCashInvested   => $profit / $maxCashInvested,
+                commissions                 => $commissions,
+                fees                        => $regulatoryFees + $otherFees,
             };
         }
     }
@@ -436,35 +427,53 @@ sub profit {
     return $self->{stats}{profit};
 }
 
-sub meanAnnualProfit {
-    my $self = shift;
-    $self->getStats();
-    return $self->{stats}{meanAnnualProfit};
-}
-
 sub maxCashInvested {
     my $self = shift;
     $self->getStats();
     return $self->{stats}{maxCashInvested};
 }
 
-sub ROI {
+sub profitOverOutlays {
     my $self = shift;
     $self->getStats();
     my $stats = $self->{stats};
     return $stats->{profit} / $stats->{maxCashInvested};
 }
 
-sub meanAnnualROI {
+sub profitOverMaxCashInvested {
     my $self = shift;
     $self->getStats();
-    return $self->{stats}{meanAnnualROI};
+    my $stats = $self->{stats};
+    return $stats->{profit} / $stats->{maxCashInvested};
+}
+
+sub meanAnnualProfit {
+    my $self = shift;
+    $self->getStats();
+    my $stats = $self->{stats};
+    return $stats->{profit} * $stats->{annualRatio};
+}
+
+sub meanAnnualProfitOverOutlays {
+    my $self = shift;
+    $self->getStats();
+    return $self->meanAnnualProfit() / $self->{stats}{totalOutlays};
+}
+
+sub meanAnnualProfitOverMaxCashInvested {
+    my $self = shift;
+    $self->getStats();
+    return $self->profitOverMaxCashInvested() * $self->{stats}{annualRatio};
 }
 
 sub commissions {
     my $self = shift;
     $self->getStats();
     return $self->{stats}{commissions};
+}
+
+sub totalCommissions {
+    return shift->commissions();
 }
 
 sub regulatoryFees {
@@ -477,6 +486,11 @@ sub otherFees {
     my $self = shift;
     $self->getStats();
     return $self->{stats}{otherFees};
+}
+
+sub totalFees {
+    my $self = shift;
+    return $self->regulatoryFees() + $self->otherFees();
 }
 
 

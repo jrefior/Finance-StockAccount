@@ -50,14 +50,14 @@ use Test::More;
     });
 
     my $profit              = $sa->profit();            # 340
-    my $investment          = $sa->maxCashInvested();     # 2000
-    my $ROI                 = $sa->ROI();               # 0.17
+    my $maxCashInvestment   = $sa->maxCashInvested();   # 2000
+    my $profitOverOutlays   = $sa->profitOverOutlays(); # 0.17
     my $meanAnnualProfit    = $sa->meanAnnualProfit();  # 31046.25
 
     is($profit, 340, 'Got expected profit.');
-    is($investment, 2000, 'Got expected minimum investment required to reach that profit.');
-    is($ROI, 0.17, 'Got expected ROI.');
-    is($meanAnnualProfit, 31046.25, 'Got expected mean annual profit.  Doing pretty well for yourself!');
+    is($maxCashInvestment, 2000, 'Got expected maxCashInvested.');
+    is($profitOverOutlays, 0.17, 'Got expected profitOverOutlays.');
+    is($meanAnnualProfit, 31046.25, 'Got expected profit per annum rate for the period.  Doing pretty well for yourself!');
 }
 
 {

@@ -63,9 +63,9 @@ use_ok('Finance::StockAccount::Set');
     ok($set->printTransactionDates(), 'Print transaction dates.');
     ok($set->accountSales(), 'Accounted for sales.');
     is($set->totalOutlays(), 3673, 'Cost (totalOutlays) as expected.');
-    is($set->revenue(), 4040, 'Benefit (revenue) as expected.');
+    is($set->totalRevenues(), 4040, 'Benefit (revenue) as expected.');
     is($set->profit(), 367, 'Profit as expected.');
-    ok($set->roi() =~ /^0\.0999/, 'ROI as expected.');
+    ok($set->profitOverOutlays() =~ /^0\.0999/, 'Profit over outlays as expected.');
     ok($set->startDate() == $tm1, 'Got expected start date.');
     ok($set->endDate() == $tm4, 'Got expected end date.');
 }
