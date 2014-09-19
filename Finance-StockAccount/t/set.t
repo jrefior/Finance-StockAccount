@@ -62,7 +62,7 @@ use_ok('Finance::StockAccount::Set');
     ok(my $set = Finance::StockAccount::Set->new([$at2, $at5, $at4, $at3, $at1]), 'Instantiated new Set object.');
     ok($set->printTransactionDates(), 'Print transaction dates.');
     ok($set->accountSales(), 'Accounted for sales.');
-    is($set->investment(), 3673, 'Cost (investment) as expected.');
+    is($set->totalOutlays(), 3673, 'Cost (totalOutlays) as expected.');
     is($set->revenue(), 4040, 'Benefit (revenue) as expected.');
     is($set->profit(), 367, 'Profit as expected.');
     ok($set->roi() =~ /^0\.0999/, 'ROI as expected.');

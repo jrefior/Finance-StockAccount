@@ -46,7 +46,7 @@ use_ok('Finance::StockAccount');
     ok($sa->stockTransaction($atHash3), 'Added new stock transaction (3).');
     ok($sa->stockTransaction($atHash4), 'Added new stock transaction (4).');
     is($sa->profit(), 564, 'Got expected profit.');
-    is($sa->minInvestment(), 4998, 'Got expected minimum cash investment that was required to achieve this profit.');
+    is($sa->maxCashInvested(), 4998, 'Got expected maximum cash invested at once.');
     ok($sa->ROI() =~ /^0\.112/, 'Got expected return on investment.');
     ok($sa->meanAnnualProfit() =~ /^595\./, 'Got expected mean annual profit.');
     ok($sa->meanAnnualROI() =~ /^0\.119/, 'Got expected mean annual ROI.');

@@ -55,7 +55,7 @@ my $amdFile     = 'dlAmdActivity.csv';
     is($sa->profit(), 2803.63, 'Got expected profit for all AMD transactions.');
     is($sa->commissions(), 223.75, 'Got expected commissions for all AMD transactions.');
     is($sa->regulatoryFees(), 0.54, 'Got expected regulatory fees for all AMD transactions.');
-    is($sa->minInvestment(), 6888.01, 'Got expected minimum cash investment that was required to reach that profit.');
+    is($sa->maxCashInvested(), 6888.01, 'Got expected minimum cash investment that was required to reach that profit.');
 }
 
 

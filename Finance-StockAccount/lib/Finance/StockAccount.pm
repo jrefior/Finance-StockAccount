@@ -22,9 +22,8 @@ sub new {
             stale               => 1,
             startDate           => undef,
             endDate             => undef,
-            sumAcquisitionCosts => undef,
-            investment          => undef,
-            minInvestment       => undef,
+            totalOutlays        => undef,
+            maxCashInvested     => undef,
             profit              => undef,
             commissions         => undef,
             regulatoryFees      => undef,
@@ -208,8 +207,8 @@ sub emptyStats {
     my $stats = $self->{stats};
     $stats->{startDate}           = undef;
     $stats->{endDate}             = undef;
-    $stats->{investment}          = undef;
-    $stats->{minInvestment}       = undef;
+    $stats->{totalOutlays}        = undef;
+    $stats->{maxCashInvested}     = undef;
     $stats->{profit}              = undef;
     $stats->{commissions}         = undef;
     $stats->{regulatoryFees}      = undef;
@@ -220,7 +219,7 @@ sub emptyStats {
     return 1;
 }
 
-sub calculateMinInvestment {
+sub calculateMaxCashInvested {
     my ($self, $realizations) = @_;
     my @allTransactions = sort { $a->tm() <=> $b->tm() } map { @{$_->acquisitions()}, $_->divestment() } @$realizations;
     @$realizations = ();
@@ -236,7 +235,7 @@ sub calculateMinInvestment {
 
 sub calculateStats {
     my $self = shift;
-    my ($investment, $profit, $commissions, $regulatoryFees, $otherFees) = (0, 0, 0, 0, 0);
+    my ($totalOutlays, $profit, $commissions, $regulatoryFees, $otherFees) = (0, 0, 0, 0, 0);
     my ($startDate, $endDate);
     my $setCount = 0;
     my @allRealizations = ();
@@ -248,7 +247,7 @@ sub calculateStats {
                 next unless $set->success();
             }
             ### Simple Totals
-            $investment     += $set->investment();
+            $totalOutlays     += $set->totalOutlays();
             $profit         += $set->profit();
             $commissions    += $set->commissions();
             $regulatoryFees += $set->regulatoryFees();
@@ -277,11 +276,11 @@ sub calculateStats {
         }
     }
     if ($setCount > 0) {
-        if ($investment) {
+        if ($totalOutlays) {
 
-            my $meanROI = $profit / $investment;
+            my $meanROI = $profit / $totalOutlays;
             my $stats = $self->{stats};
-            $stats->{investment} = $investment;
+            $stats->{totalOutlays} = $totalOutlays;
             $stats->{profit} = $profit;
             $stats->{commissions} = $commissions;
             $stats->{regulatoryFees} = $regulatoryFees;
@@ -297,9 +296,9 @@ sub calculateStats {
             my $annualRatio = $secondsInYear / $secondsInAccount;
             $stats->{meanAnnualProfit} = $profit * $annualRatio;
 
-            my $minInvestment = $self->calculateMinInvestment(\@allRealizations);
-            $stats->{minInvestment} = $minInvestment;
-            my $ROI = $profit / $minInvestment;
+            my $maxCashInvested = $self->calculateMaxCashInvested(\@allRealizations);
+            $stats->{maxCashInvested} = $maxCashInvested;
+            my $ROI = $profit / $maxCashInvested;
             $stats->{ROI} = $ROI;
             $stats->{meanAnnualROI} = $ROI * $annualRatio;
 
@@ -308,7 +307,7 @@ sub calculateStats {
             return 1;
         }
         else {
-            carp "No investment found on which to compute stats.\n";
+            carp "No totalOutlays found on which to compute stats.\n";
             $self->emptyStats();
             return 0;
         }
@@ -332,7 +331,7 @@ sub getStats {
 
 sub statsForPeriod {
     my ($self, $tm1, $tm2) = @_;
-    my ($investment, $profit, $commissions, $regulatoryFees, $otherFees) = (0, 0, 0, 0, 0);
+    my ($totalOutlays, $profit, $commissions, $regulatoryFees, $otherFees) = (0, 0, 0, 0, 0);
     my @allRealizations = ();
     my $setCount = 0;
     foreach my $hashKey (keys %{$self->{sets}}) {
@@ -341,7 +340,7 @@ sub statsForPeriod {
         $set = $self->getSetFiltered($hashKey);
         if ($set) {
             $setCount++;
-            $investment     += $set->investment();
+            $totalOutlays     += $set->totalOutlays();
             $profit         += $set->profit();
             $commissions    += $set->commissions();
             $regulatoryFees += $set->regulatoryFees();
@@ -350,12 +349,12 @@ sub statsForPeriod {
         }
     }
     if ($setCount > 0) {
-        if ($investment) {
-            my $minInvestment = $self->calculateMinInvestment(\@allRealizations);
+        if ($totalOutlays) {
+            my $maxCashInvested = $self->calculateMaxCashInvested(\@allRealizations);
             my $yearStats = {
-                minInvestment   => $minInvestment,
+                maxCashInvested => $maxCashInvested,
                 profit          => $profit,
-                ROI             => $profit / $minInvestment,
+                ROI             => $profit / $maxCashInvested,
                 commissions     => $commissions,
                 regulatoryFees  => $regulatoryFees,
                 otherFees       => $otherFees,
@@ -443,17 +442,17 @@ sub meanAnnualProfit {
     return $self->{stats}{meanAnnualProfit};
 }
 
-sub minInvestment {
+sub maxCashInvested {
     my $self = shift;
     $self->getStats();
-    return $self->{stats}{minInvestment};
+    return $self->{stats}{maxCashInvested};
 }
 
 sub ROI {
     my $self = shift;
     $self->getStats();
     my $stats = $self->{stats};
-    return $stats->{profit} / $stats->{minInvestment};
+    return $stats->{profit} / $stats->{maxCashInvested};
 }
 
 sub meanAnnualROI {
@@ -502,8 +501,8 @@ Analyze past transactions in a personal stock account.  Find out your profit,
 annual profit, quarterly profit, monthly profit, or profit for any other
 arbitrary date/time range.  Discover what the most cash you had invested in
 stocks was, over the course of your account from when it opened to the present,
-or for any period.  Call that your investment and learn how the ratio of profit
-to that investment changed from period to period.  Find out how much you spent
+or for any period.  Call that your totalOutlays and learn how the ratio of profit
+to that totalOutlays changed from period to period.  Find out how much you spent
 on commissions in a year.
 
 Perhaps a little code snippet.
@@ -601,7 +600,7 @@ These modules attempt to match each divestment against one or more prior
 acquisition(s), and use that match to calculate profit and other statistics
 useful for evaluating stock account performance.  A successful match between a
 divestment and one or more acquisitions is called a "realization" because it
-represents the consummation or realization of the investment.
+represents the consummation or realization of the totalOutlays.
 
 =head1 METHODS
 

@@ -50,7 +50,7 @@ use Test::More;
     });
 
     my $profit              = $sa->profit();            # 340
-    my $investment          = $sa->minInvestment();     # 2000
+    my $investment          = $sa->maxCashInvested();     # 2000
     my $ROI                 = $sa->ROI();               # 0.17
     my $meanAnnualProfit    = $sa->meanAnnualProfit();  # 31046.25
 

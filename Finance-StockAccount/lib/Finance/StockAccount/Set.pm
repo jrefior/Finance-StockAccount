@@ -32,7 +32,7 @@ sub getNewStatsHash {
     return {
         stale               => 1,
         profit              => 0,
-        investment          => 0,
+        totalOutlays          => 0,
         revenue             => 0,
         commissions         => 0,
         regulatoryFees      => 0,
@@ -228,7 +228,7 @@ sub accountPriorPurchase {
         $self->endDate($realization->endDate());
         my $stats = $self->{stats};
         $stats->{profit}            += $realization->realized();
-        $stats->{investment}        += $realization->costBasis();
+        $stats->{totalOutlays}        += $realization->costBasis();
         $stats->{revenue}           += $realization->revenue();
         $stats->{commissions}       += $realization->commissions();
         $stats->{regulatoryFees}    += $realization->regulatoryFees();
@@ -316,7 +316,7 @@ sub checkStats {
 sub roi {
     my $self = shift;
     my $stats = $self->{stats};
-    return $stats->{profit} / $stats->{investment};
+    return $stats->{profit} / $stats->{totalOutlays};
 }
 
 sub profit {
@@ -325,10 +325,10 @@ sub profit {
     return $self->{stats}{profit};
 }
 
-sub investment {
+sub totalOutlays {
     my $self = shift;
     $self->checkStats();
-    return $self->{stats}{investment};
+    return $self->{stats}{totalOutlays};
 }
 
 sub revenue {
