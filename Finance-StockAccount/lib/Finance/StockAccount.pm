@@ -50,6 +50,32 @@ sub getNewStatsHash {
     };
 }
 
+sub stale {
+    my ($self, $assertion) = @_;
+    my $stats = $self->{stats};
+    if (defined($assertion)) {
+        if ($assertion == 1 or $assertion == 0) {
+            if ($assertion) {
+                my $value = 1;
+                $stats->{stale}               = $value;
+                $stats->{annualStatsStale}    = $value;
+                $stats->{quarterlyStatsStale} = $value;
+                $stats->{monthlyStatsStale}   = $value;
+            }
+            else {
+                $stats->{stale} = 0;
+            }
+            return 1;
+        }
+        else {
+            croak "Method 'stale' only accepts assertions in the form of 1 or 0 -- $assertion is not valid.";
+        }
+    }
+    else {
+        return $stats->{stale};
+    }
+}
+
 sub allowZeroPrice {
     my ($self, $allowZeroPrice) = @_;
     if (defined($allowZeroPrice)) {
@@ -107,7 +133,7 @@ sub addToSet {
             $self->{sets}{$hashKey} = $set;
             $status = $set;
         }
-        $status and $self->{stale} = 1;
+        $status and $self->stale(1);
         return $status;
     }
     else {
@@ -123,7 +149,7 @@ sub addAccountTransactions {
         foreach my $at (@$accountTransactions) {
             $self->addToSet($at) and $added++;
         }
-        $added and $self->{stats}{stale} = 1;
+        $added and $self->stale(1);
         return $added;
     }
     else {
@@ -183,7 +209,7 @@ sub skipStocks {
         foreach my $stock (@skipStocks) {
             $self->{skipStocks}{$stock} = 1;
         }
-        $self->{stats}{stale} = 1;
+        $self->stale(1);
         return 1;
     }
     else {
@@ -195,7 +221,7 @@ sub resetSkipStocks {
     my $self = shift;
     if (scalar(keys %{$self->{skipStocks}})) {
         $self->{skipStocks} = {};
-        $self->{stats}{stale} = 1;
+        $self->stale(1);
     }
     return 1;
 }
@@ -297,7 +323,7 @@ sub calculateStats {
             $stats->{maxCashInvested} = $maxCashInvested;
             $stats->{numberOfTrades} = $numberOfTrades;
 
-            $stats->{stale} = 0;
+            $self->stale(0);
 
             return 1;
         }
