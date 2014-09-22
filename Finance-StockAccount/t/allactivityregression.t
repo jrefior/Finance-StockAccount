@@ -45,15 +45,7 @@ my $printMonthlyStats = 1;
         }
     }
     if ($printMonthlyStats) {
-        my @headings = qw(Year Month Outlays Revenues MaxInvested Profit OverOut OverInvested Commiss RegFees OthFees NumTrades);
-        printf("%4s %5s %8s %8s %11s %8s %7s %12s %7s %7s %7s %9s\n", @headings);
-        my $pattern = "%4d %5d %8.2f %8.2f %11.2f %8.2f %7.2f %12.2f %7.2f %7.2f %7.2f %9d\n";
-        ok(my $monthlyStats = $sa->monthlyStats(), 'Calculated monthly stats.');
-        foreach my $month (@$monthlyStats) {
-            printf($pattern, $month->{year}, $month->{month}, $month->{totalOutlays}, $month->{totalRevenues}, $month->{maxCashInvested},
-                $month->{profit}, $month->{profitOverOutlays}, $month->{profitOverMaxCashInvested}, $month->{commissions}, $month->{regulatoryFees},
-                $month->{otherFees}, $month->{numberOfTrades});
-        }
+        print $sa->monthlyStatsString();
     }
 }
 

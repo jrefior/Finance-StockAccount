@@ -13,6 +13,18 @@ use Finance::StockAccount::Stock;
 
 our $VERSION = '0.01';
 
+my $statsKeyHeadings = [qw(
+    Outlays Revenues MaxInvested Profit OverOut
+    OverInvested Commiss RegFees OthFees NumTrades
+)];
+my $statsKeyHeadingsPattern = "%12s %12s %12s %12s %7s %12s %7s %7s %7s %9s";
+
+my $statsKeys = [qw(
+    totalOutlays              totalRevenues maxCashInvested profit    profitOverOutlays
+    profitOverMaxCashInvested commissions   regulatoryFees  otherFees numberOfTrades
+)];
+my $statsKeysPattern = "%12.2f %12.2f %12.2f %12.2f %7.2f %12.2f %7.2f %7.2f %7.2f %9d";
+
 sub new {
     my ($class, $options) = @_;
     my $self = {
@@ -20,6 +32,7 @@ sub new {
         skipStocks          => {},
         stats               => $class->getNewStatsHash(),
         allowZeroPrice      => 0,
+        verbose             => 1,
     };
     if ($options and exists($options->{allowZeroPrice}) and $options->{allowZeroPrice}) {
         $self->{allowZeroPrice} = 1;
@@ -29,24 +42,26 @@ sub new {
 
 sub getNewStatsHash {
     return {
-        stale               => 1,
-        startDate           => undef,
-        endDate             => undef,
-        totalOutlays        => 0,
-        totalRevenues       => 0,
-        profit              => 0,
-        maxCashInvested     => 0,
-        commissions         => 0,
-        regulatoryFees      => 0,
-        otherFees           => 0,
-        annualRatio         => 0,
-        numberOfTrades      => 0,
-        annualStats         => undef,
-        annualStatsStale    => 1,
-        quarterlyStats      => undef,
-        quarterlyStatsStale => 1,
-        monthlyStats        => undef,
-        monthlyStatsStale   => 1,
+        stale                       => 1,
+        startDate                   => undef,
+        endDate                     => undef,
+        totalOutlays                => 0,
+        totalRevenues               => 0,
+        profit                      => 0,
+        maxCashInvested             => 0,
+        profitOverOutlays           => 0,
+        profitOverMaxCashInvested   => 0,
+        commissions                 => 0,
+        regulatoryFees              => 0,
+        otherFees                   => 0,
+        annualRatio                 => 0,
+        numberOfTrades              => 0,
+        annualStats                 => undef,
+        annualStatsStale            => 1,
+        quarterlyStats              => undef,
+        quarterlyStatsStale         => 1,
+        monthlyStats                => undef,
+        monthlyStatsStale           => 1,
     };
 }
 
@@ -260,7 +275,7 @@ sub calculateMaxCashInvested {
 
 sub calculateStats {
     my $self = shift;
-    my ($totalOutlays, $profit, $commissions, $regulatoryFees, $otherFees) = (0, 0, 0, 0, 0);
+    my ($totalOutlays, $totalRevenues, $profit, $commissions, $regulatoryFees, $otherFees) = (0, 0, 0, 0, 0, 0);
     my ($startDate, $endDate);
     my $setCount = 0;
     my @allRealizations = ();
@@ -273,7 +288,8 @@ sub calculateStats {
                 next unless $set->success();
             }
             ### Simple Totals
-            $totalOutlays     += $set->totalOutlays();
+            $totalOutlays   += $set->totalOutlays();
+            $totalRevenues  += $set->totalRevenues();
             $profit         += $set->profit();
             $commissions    += $set->commissions();
             $regulatoryFees += $set->regulatoryFees();
@@ -305,26 +321,27 @@ sub calculateStats {
         if ($totalOutlays) {
             my $profitOverOutlays = $profit / $totalOutlays;
             my $stats = $self->{stats};
-            $stats->{totalOutlays} = $totalOutlays;
-            $stats->{profit} = $profit;
-            $stats->{commissions} = $commissions;
-            $stats->{regulatoryFees} = $regulatoryFees;
-            $stats->{otherFees} = $otherFees;
+            $stats->{totalOutlays}      = $totalOutlays;
+            $stats->{totalRevenues}     = $totalRevenues;
+            $stats->{profit}            = $profit;
+            $stats->{commissions}       = $commissions;
+            $stats->{regulatoryFees}    = $regulatoryFees;
+            $stats->{otherFees}         = $otherFees;
             $stats->{profitOverOutlays} = $profitOverOutlays;
-            $stats->{startDate} = $startDate;
-            $stats->{endDate} = $endDate;
+            $stats->{startDate}         = $startDate;
+            $stats->{endDate}           = $endDate;
             my $secondsInYear = 60 * 60 * 24 * 365.25;
             my $secondsInAccount = $endDate->epoch() - $startDate->epoch();
             if (!$secondsInAccount) {
                 croak "No time passed in account? Can't calculate time-related stats.";
             }
-            $stats->{annualRatio} = $secondsInYear / $secondsInAccount;
+            $stats->{annualRatio}               = $secondsInYear / $secondsInAccount;
             my ($maxCashInvested, $numberOfTrades) = $self->calculateMaxCashInvested(\@allRealizations);
-            $stats->{maxCashInvested} = $maxCashInvested;
-            $stats->{numberOfTrades} = $numberOfTrades;
-
+            $stats->{maxCashInvested}           = $maxCashInvested;
+            $stats->{profitOverOutlays}         = $profit / $totalOutlays;
+            $stats->{profitOverMaxCashInvested} = $profit / $maxCashInvested;
+            $stats->{numberOfTrades}            = $numberOfTrades;
             $self->stale(0);
-
             return 1;
         }
         else {
@@ -493,6 +510,7 @@ sub calculateMonthlyStats {
     return $monthlyStats;
 }
 
+
 sub annualStats {
     my $self = shift;
     my $stats = $self->{stats};
@@ -528,16 +546,34 @@ sub monthlyStats {
 
 sub monthlyStatsString {
     my $self = shift;
-    my @headings = qw(Year Month Outlays Revenues MaxInvested Profit OverOut OverInvested Commiss RegFees OthFees NumTrades);
-    my $statsString = sprintf("%4s %5s %8s %8s %11s %8s %7s %12s %7s %7s %7s %9s\n", @headings);
-
-    my $pattern = "%4d %5d %8.2f %8.2f %11.2f %8.2f %7.2f %12.2f %7.2f %7.2f %7.2f %9d\n";
+    my @headings = qw(Year Month);
+    my $statsString = sprintf("%4s %5s $statsKeyHeadingsPattern\n", @headings, @$statsKeyHeadings);
+    my $lineLength = length($statsString);
+    my $pattern = "%4d %5d $statsKeysPattern\n";
     my $monthlyStats = $self->monthlyStats();
-    foreach my $month (@$monthlyStats) {
-        $statsString .= sprintf($pattern, $month->{year}, $month->{month}, $month->{totalOutlays}, $month->{totalRevenues}, $month->{maxCashInvested},
-            $month->{profit}, $month->{profitOverOutlays}, $month->{profitOverMaxCashInvested}, $month->{commissions}, $month->{regulatoryFees},
-            $month->{otherFees}, $month->{numberOfTrades});
+    my $totals;
+    my $verbose = $self->{verbose};
+    if ($verbose) {
+        $totals = [map { 0 } (0 .. scalar(@$statsKeys) - 1)];
     }
+    foreach my $month (@$monthlyStats) {
+        my @row = ($month->{year}, $month->{month});
+        for (my $x=0; $x<scalar(@$statsKeys); $x++) {
+            my $key = $statsKeys->[$x];
+            my $value = $month->{$key};
+            if ($verbose) {
+                $totals->[$x] += $value;
+            }
+            push(@row, $value);
+        }
+        $statsString .= sprintf($pattern, @row);
+    }
+    if ($verbose) {
+        $statsString .= '-'x$lineLength . "\n"
+            . sprintf("%-10s $statsKeysPattern\n", 'COL SUMS', @$totals);
+    }
+    $statsString .= '-'x$lineLength . "\n"
+        . sprintf("%-10s $statsKeysPattern\n", 'ACCT TOTAL', map { $self->{stats}{$_} || undef } @$statsKeys);
     return $statsString;
 }
 
