@@ -52,12 +52,12 @@ use Test::More;
     my $profit              = $sa->profit();            # 340
     my $maxCashInvestment   = $sa->maxCashInvested();   # 2000
     my $profitOverOutlays   = $sa->profitOverOutlays(); # 0.17
-    my $meanAnnualProfit    = $sa->meanAnnualProfit();  # 31046.25
+    my $profitOverYears     = $sa->profitOverYears();  # 31046.25
 
     is($profit, 340, 'Got expected profit.');
     is($maxCashInvestment, 2000, 'Got expected maxCashInvested.');
     is($profitOverOutlays, 0.17, 'Got expected profitOverOutlays.');
-    is($meanAnnualProfit, 31046.25, 'Got expected profit per annum rate for the period.  Doing pretty well for yourself!');
+    is($profitOverYears, 31046.25, 'Got expected profit divided by years.  Doing pretty well for yourself!');
 }
 
 {

@@ -1,5 +1,5 @@
-package Finance::StockAccount;
 # see pod at end of file for documentation
+package Finance::StockAccount;
 
 use strict;
 use warnings;
@@ -13,6 +13,7 @@ use Finance::StockAccount::Stock;
 
 our $VERSION = '0.01';
 
+### For convenience text output
 my $statsKeyHeadings = [qw(
     Outlays Revenues MaxInvested Profit OverOut
     OverInvested Commiss RegFees OthFees NumTrades
@@ -25,6 +26,7 @@ my $statsKeys = [qw(
 )];
 my $statsKeysPattern = "%12.2f %12.2f %12.2f %12.2f %7.2f %12.2f %9.2f %7.2f %7.2f %9d";
 
+### Class definition
 sub new {
     my ($class, $options) = @_;
     my $self = {
@@ -45,12 +47,14 @@ sub getNewStatsHash {
         stale                       => 1,
         startDate                   => undef,
         endDate                     => undef,
+        maxCashInvested             => 0,
         totalOutlays                => 0,
         totalRevenues               => 0,
-        maxCashInvested             => 0,
         profit                      => 0,
         profitOverOutlays           => 0,
         profitOverMaxCashInvested   => 0,
+        profitOverYears             => 0,
+        pomciOverYears              => 0,
         commissions                 => 0,
         regulatoryFees              => 0,
         otherFees                   => 0,
@@ -65,6 +69,7 @@ sub getNewStatsHash {
     };
 }
 
+### Methods
 sub stale {
     my ($self, $assertion) = @_;
     my $stats = $self->{stats};
@@ -335,11 +340,15 @@ sub calculateStats {
             if (!$secondsInAccount) {
                 croak "No time passed in account? Can't calculate time-related stats.";
             }
-            $stats->{annualRatio}               = $secondsInYear / $secondsInAccount;
+            my $annualRatio                     = $secondsInYear / $secondsInAccount;
+            $stats->{annualRatio}               = $annualRatio;
+            $stats->{profitOverYears}           = $profit * $annualRatio;
             my ($maxCashInvested, $numberOfTrades) = $self->calculateMaxCashInvested(\@allRealizations);
             $stats->{maxCashInvested}           = $maxCashInvested;
             $stats->{profitOverOutlays}         = $profit / $totalOutlays;
-            $stats->{profitOverMaxCashInvested} = $profit / $maxCashInvested;
+            my $pomci                           = $profit / $maxCashInvested;
+            $stats->{profitOverMaxCashInvested} = $pomci;
+            $stats->{pomciOverYears}            = $pomci * $annualRatio;
             $stats->{numberOfTrades}            = $numberOfTrades;
             $self->stale(0);
             return 1;
@@ -363,6 +372,35 @@ sub getStats {
     else {
         return 1;
     }
+}
+
+sub statsString {
+    my $self = shift;
+    $self->getStats();
+    my $stats = $self->{stats};
+    my $statsString .= 'Account-level stats:' . "\n";
+    my @statsLines = (
+        'First Trade Date'                  => 'startDate'                  => '%35s',
+        'Last Trade Date'                   => 'endDate'                    => '%35s',
+        'Maximum Cash Invested at Once'     => 'maxCashInvested'            => '%35.2f',
+        'Sum Outlays'                       => 'totalOutlays'               => '%35.2f',
+        'Sum Revenues'                      => 'totalRevenues'              => '%35.2f',
+        'Total Profit'                      => 'profit'                     => '%35.2f', 
+        'Profit Over Years'                 => 'profitOverYears'            => '%35.2f',
+        'Profit Over Sum Outlays'           => 'profitOverOutlays'          => '%35.2f', 
+        'Profit Over Max Cash Invested'     => 'profitOverMaxCashInvested'  => '%35.2f',
+        'The Above (^) Over Years'          => 'pomciOverYears'             => '%35.2f',
+        'Total Commissions'                 => 'commissions'                => '%35.2f',
+        'Total Regulatory Fees'             => 'regulatoryFees'             => '%35.2f',
+        'Total Other Fees'                  => 'otherFees'                  => '%35.2f',
+        'Num Trades Included in Stats'      => 'numberOfTrades'             => '%35d',
+    #    'Num Trades Excluded from Stats'    => 'numberExcluded'             => '%35d',
+    );
+    for (my $x=0; $x<scalar(@statsLines); $x+=3) {
+        my ($name, $key, $valPattern) = @statsLines[$x .. $x+2];
+        $statsString .= sprintf("%30s $valPattern\n", $name, $stats->{$key});
+    }
+    return $statsString;
 }
 
 sub statsForPeriod {
@@ -510,7 +548,6 @@ sub calculateMonthlyStats {
     return $monthlyStats;
 }
 
-
 sub annualStats {
     my $self = shift;
     my $stats = $self->{stats};
@@ -632,34 +669,25 @@ sub maxCashInvested {
 sub profitOverOutlays {
     my $self = shift;
     $self->getStats();
-    my $stats = $self->{stats};
-    return $stats->{profit} / $stats->{maxCashInvested};
+    return $self->{stats}{profitOverOutlays};
 }
 
 sub profitOverMaxCashInvested {
     my $self = shift;
     $self->getStats();
-    my $stats = $self->{stats};
-    return $stats->{profit} / $stats->{maxCashInvested};
+    return $self->{stats}{profitOverMaxCashInvested};
 }
 
-sub meanAnnualProfit {
+sub profitOverYears {
     my $self = shift;
     $self->getStats();
-    my $stats = $self->{stats};
-    return $stats->{profit} * $stats->{annualRatio};
+    return $self->{stats}{profitOverYears};
 }
 
-sub meanAnnualProfitOverOutlays {
+sub profitOverMaxCashInvestedOverYears {
     my $self = shift;
     $self->getStats();
-    return $self->meanAnnualProfit() / $self->{stats}{totalOutlays};
-}
-
-sub meanAnnualProfitOverMaxCashInvested {
-    my $self = shift;
-    $self->getStats();
-    return $self->profitOverMaxCashInvested() * $self->{stats}{annualRatio};
+    return $self->{stats}{pomciOverYears};
 }
 
 sub commissions {
