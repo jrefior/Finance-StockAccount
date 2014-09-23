@@ -17,13 +17,13 @@ my $statsKeyHeadings = [qw(
     Outlays Revenues MaxInvested Profit OverOut
     OverInvested Commiss RegFees OthFees NumTrades
 )];
-my $statsKeyHeadingsPattern = "%12s %12s %12s %12s %7s %12s %7s %7s %7s %9s";
+my $statsKeyHeadingsPattern = "%12s %12s %12s %12s %7s %12s %9s %7s %7s %9s";
 
 my $statsKeys = [qw(
     totalOutlays              totalRevenues maxCashInvested profit    profitOverOutlays
     profitOverMaxCashInvested commissions   regulatoryFees  otherFees numberOfTrades
 )];
-my $statsKeysPattern = "%12.2f %12.2f %12.2f %12.2f %7.2f %12.2f %7.2f %7.2f %7.2f %9d";
+my $statsKeysPattern = "%12.2f %12.2f %12.2f %12.2f %7.2f %12.2f %9.2f %7.2f %7.2f %9d";
 
 sub new {
     my ($class, $options) = @_;
@@ -47,15 +47,15 @@ sub getNewStatsHash {
         endDate                     => undef,
         totalOutlays                => 0,
         totalRevenues               => 0,
-        profit                      => 0,
         maxCashInvested             => 0,
+        profit                      => 0,
         profitOverOutlays           => 0,
         profitOverMaxCashInvested   => 0,
         commissions                 => 0,
         regulatoryFees              => 0,
         otherFees                   => 0,
-        annualRatio                 => 0,
         numberOfTrades              => 0,
+        annualRatio                 => 0,
         annualStats                 => undef,
         annualStatsStale            => 1,
         quarterlyStats              => undef,
@@ -544,23 +544,27 @@ sub monthlyStats {
     }
 }
 
-sub monthlyStatsString {
-    my $self = shift;
-    my @headings = qw(Year Month);
-    my $statsString = sprintf("%4s %5s $statsKeyHeadingsPattern\n", @headings, @$statsKeyHeadings);
+sub periodicStatsString {
+    my ($self, $params) = @_;
+    my $periodHeadings          = $params->{periodHeadings};
+    my $periodHeadingsPattern   = $params->{periodHeadingsPattern};
+    my $periodKeys              = $params->{periodKeys};
+    my $periodValuesPattern     = $params->{periodValuesPattern};
+    my $periodHeadingsWidth     = $params->{periodHeadingsWidth};
+    my $statsArray              = $params->{statsArray};
+    my $statsString = sprintf("$periodHeadingsPattern $statsKeyHeadingsPattern\n", @$periodHeadings, @$statsKeyHeadings);
     my $lineLength = length($statsString);
-    my $pattern = "%4d %5d $statsKeysPattern\n";
-    my $monthlyStats = $self->monthlyStats();
+    my $pattern = "$periodValuesPattern $statsKeysPattern\n";
     my $totals;
     my $verbose = $self->{verbose};
     if ($verbose) {
         $totals = [map { 0 } (0 .. scalar(@$statsKeys) - 1)];
     }
-    foreach my $month (@$monthlyStats) {
-        my @row = ($month->{year}, $month->{month});
+    foreach my $period (@$statsArray) {
+        my @row = map { $period->{$_} } @$periodKeys;
         for (my $x=0; $x<scalar(@$statsKeys); $x++) {
             my $key = $statsKeys->[$x];
-            my $value = $month->{$key};
+            my $value = $period->{$key};
             if ($verbose) {
                 $totals->[$x] += $value;
             }
@@ -570,11 +574,47 @@ sub monthlyStatsString {
     }
     if ($verbose) {
         $statsString .= '-'x$lineLength . "\n"
-            . sprintf("%-10s $statsKeysPattern\n", 'COL SUMS', @$totals);
+            . sprintf("%-${periodHeadingsWidth}s $statsKeysPattern\n", 'COL SUMS', @$totals);
     }
     $statsString .= '-'x$lineLength . "\n"
-        . sprintf("%-10s $statsKeysPattern\n", 'ACCT TOTAL', map { $self->{stats}{$_} || undef } @$statsKeys);
+        . sprintf("%-${periodHeadingsWidth}s $statsKeysPattern\n", 'ACCT TOTAL', map { $self->{stats}{$_} } @$statsKeys);
     return $statsString;
+}
+
+sub annualStatsString {
+    my $self = shift;
+    return $self->periodicStatsString({
+        periodHeadings          => [qw(Year)],
+        periodHeadingsPattern   => "%10s",
+        periodKeys              => [qw(year)],
+        periodValuesPattern     => "%10d",
+        periodHeadingsWidth     => 10,
+        statsArray              => $self->annualStats(),
+    });
+}
+
+sub quarterlyStatsString {
+    my $self = shift;
+    return $self->periodicStatsString({
+        periodHeadings          => [qw(Year Quarter)],
+        periodHeadingsPattern   => "%4s %7s",
+        periodKeys              => [qw(year quarter)],
+        periodValuesPattern     => "%4d %7d",
+        periodHeadingsWidth     => 12,
+        statsArray              => $self->quarterlyStats(),
+    });
+}
+
+sub monthlyStatsString {
+    my $self = shift;
+    return $self->periodicStatsString({
+        periodHeadings          => [qw(Year Month)],
+        periodHeadingsPattern   => "%4s %5s",
+        periodKeys              => [qw(year month)],
+        periodValuesPattern     => "%4d %5d",
+        periodHeadingsWidth     => 10,
+        statsArray              => $self->monthlyStats(),
+    });
 }
 
 sub profit {
