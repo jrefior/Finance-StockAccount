@@ -59,6 +59,7 @@ sub getNewStatsHash {
         regulatoryFees              => 0,
         otherFees                   => 0,
         numberOfTrades              => 0,
+        numberExcluded              => 0,
         annualRatio                 => 0,
         annualStats                 => undef,
         annualStatsStale            => 1,
@@ -278,54 +279,65 @@ sub calculateMaxCashInvested {
     }
 }
 
+sub numberExcludedFromSet {
+    my ($self, $set) = @_;
+    return scalar(@{$set->unrealizedTransactions()});
+}
+
 sub calculateStats {
     my $self = shift;
-    my ($totalOutlays, $totalRevenues, $profit, $commissions, $regulatoryFees, $otherFees) = (0, 0, 0, 0, 0, 0);
+    my ($totalOutlays, $totalRevenues, $profit, $commissions, $regulatoryFees, $otherFees, $numberExcluded) = (0, 0, 0, 0, 0, 0, 0);
     my ($startDate, $endDate);
     my $setCount = 0;
     my @allRealizations = ();
-    $self->{stats} = $self->getNewStatsHash();
+    my $stats = $self->getNewStatsHash();
+    $self->{stats} = $stats;
     foreach my $hashKey (keys %{$self->{sets}}) {
-        my $set = $self->getSetFiltered($hashKey);
+        my $set = $self->getSet($hashKey);
         if ($set) {
             if ($set->stale()) {
                 $set->accountSales();
+            }
+            $numberExcluded += $self->numberExcludedFromSet($set);
+            $set = $self->getSetFiltered($hashKey);
+            if ($set) {
                 next unless $set->success();
-            }
-            ### Simple Totals
-            $totalOutlays   += $set->totalOutlays();
-            $totalRevenues  += $set->totalRevenues();
-            $profit         += $set->profit();
-            $commissions    += $set->commissions();
-            $regulatoryFees += $set->regulatoryFees();
-            $otherFees      += $set->otherFees();
 
-            ### Date-Aware Totals
-            push(@allRealizations, @{$set->realizations()});
+                ### Simple Totals
+                $totalOutlays   += $set->totalOutlays();
+                $totalRevenues  += $set->totalRevenues();
+                $profit         += $set->profit();
+                $commissions    += $set->commissions();
+                $regulatoryFees += $set->regulatoryFees();
+                $otherFees      += $set->otherFees();
 
-            ### End-Date, Start-Date
-            my $setStart = $set->startDate();
-            $setStart or die "Didn't get set startDate for hashkey $hashKey\n";
-            if (!defined($startDate)) {
-                $startDate = $setStart;
+                ### Date-Aware Totals
+                push(@allRealizations, @{$set->realizations()});
+
+                ### End-Date, Start-Date
+                my $setStart = $set->startDate();
+                $setStart or die "Didn't get set startDate for hashkey $hashKey\n";
+                if (!defined($startDate)) {
+                    $startDate = $setStart;
+                }
+                elsif ($setStart < $startDate) {
+                    $startDate = $setStart;
+                }
+                my $setEnd   = $set->endDate();
+                if (!$endDate) {
+                    $endDate = $setEnd;
+                }
+                elsif ($setEnd > $endDate) {
+                    $endDate = $setEnd;
+                }
+                $setCount++;
             }
-            elsif ($setStart < $startDate) {
-                $startDate = $setStart;
-            }
-            my $setEnd   = $set->endDate();
-            if (!$endDate) {
-                $endDate = $setEnd;
-            }
-            elsif ($setEnd > $endDate) {
-                $endDate = $setEnd;
-            }
-            $setCount++;
         }
     }
+    $stats->{numberExcluded} = $numberExcluded;
     if ($setCount > 0) {
         if ($totalOutlays) {
             my $profitOverOutlays = $profit / $totalOutlays;
-            my $stats = $self->{stats};
             $stats->{totalOutlays}      = $totalOutlays;
             $stats->{totalRevenues}     = $totalRevenues;
             $stats->{profit}            = $profit;
@@ -394,7 +406,7 @@ sub statsString {
         'Total Regulatory Fees'             => 'regulatoryFees'             => '%35.2f',
         'Total Other Fees'                  => 'otherFees'                  => '%35.2f',
         'Num Trades Included in Stats'      => 'numberOfTrades'             => '%35d',
-    #    'Num Trades Excluded from Stats'    => 'numberExcluded'             => '%35d',
+        'Num Trades Excluded from Stats'    => 'numberExcluded'             => '%35d',
     );
     for (my $x=0; $x<scalar(@statsLines); $x+=3) {
         my ($name, $key, $valPattern) = @statsLines[$x .. $x+2];

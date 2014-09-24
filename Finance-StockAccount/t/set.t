@@ -68,6 +68,7 @@ use_ok('Finance::StockAccount::Set');
     ok($set->profitOverOutlays() =~ /^0\.0999/, 'Profit over outlays as expected.');
     ok($set->startDate() == $tm1, 'Got expected start date.');
     ok($set->endDate() == $tm4, 'Got expected end date.');
+    is(scalar(@{$set->unrealizedTransactions()}), 1, 'One unrealized transaction, as expected.');
 }
 
 {

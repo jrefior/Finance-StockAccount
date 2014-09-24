@@ -15,7 +15,6 @@ sub new {
         stock               => undef,
         accountTransactions => [],
         realizations        => [],
-        success             => 0,
         stats               => getNewStatsHash(),
         dateLimit           => {
             start               => undef,
@@ -31,6 +30,7 @@ sub new {
 sub getNewStatsHash {
     return {
         stale               => 1,
+        success             => 0,
         profit              => 0,
         totalOutlays        => 0,
         totalRevenues       => 0,
@@ -45,6 +45,11 @@ sub getNewStatsHash {
 sub realizationCount {
     my $self = shift;
     return scalar(@{$self->{realizations}});
+}
+
+sub unrealizedTransactions {
+    my $self = shift;
+    return [grep { $_->accounted() == 0 } @{$self->{accountTransactions}}];
 }
 
 sub stale {
@@ -97,7 +102,7 @@ sub clearPastAccounting {
     }
     $self->{realizations} = [];
     $self->{stats} = $self->getNewStatsHash();
-    $self->{success} = 0;
+    $self->{stats}{success} = 0;
     return 1;
 }
 
@@ -232,7 +237,7 @@ sub accountPriorPurchase {
         $stats->{commissions}       += $realization->commissions();
         $stats->{regulatoryFees}    += $realization->regulatoryFees();
         $stats->{otherFees}         += $realization->otherFees();
-        $self->{success} = 1;
+        $stats->{success} = 1;
         return 1;
     }
     else {
