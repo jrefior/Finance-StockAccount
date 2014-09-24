@@ -45,6 +45,7 @@ use_ok('Finance::StockAccount');
     ok($sa->addAccountTransactions([$at]), 'Added $at object.');
     ok($sa->stockTransaction($atHash3), 'Added new stock transaction (3).');
     ok($sa->stockTransaction($atHash4), 'Added new stock transaction (4).');
+    is($sa->numberExcluded(), 0, 'Got zero excluded transactions as expected.');
     is($sa->profit(), 564, 'Got expected profit.');
     is($sa->maxCashInvested(), 4998, 'Got expected maximum cash invested at once.');
     ok($sa->profitOverOutlays() =~ /^0\.112/, 'Got expected return on investment.');
@@ -55,6 +56,7 @@ use_ok('Finance::StockAccount');
     is($sa->numberOfTrades(), 4, 'Got expected number of trades.');
     is($sa->regulatoryFees(), 0, 'Got expected regulatory fees.');
     ok($sa->skipStocks(qw(GOOGL)), 'Add GOOGL to skipstocks list.');
+    is($sa->numberExcluded(), 2, 'Got two excluded transactions as expected when skipping GOOGL.');
     is($sa->profit(), 460, 'Got expected profit -- skipping GOOGL.');
     ok($sa->resetSkipStocks(), 'Reset skip stocks.');
     ok(!defined($sa->skipStocks()), 'Skip stocks now returns undef.');
@@ -63,6 +65,7 @@ use_ok('Finance::StockAccount');
     ok($sa->skipStocks(qw(INTC AMD)), 'Added INTC and AMD to skipstocks list.');
     ok(!$sa->profit(), 'Correctly failed to get profit when all stocks were skipped.');
     is(join('', $sa->skipStocks()), join('', sort qw(GOOGL INTC AMD)), 'Got expected skipStocks list.');
+    is($sa->numberExcluded(), 4, 'Got expected number of excluded transactions when all stocks were skipped.');
 }
 
 {

@@ -29,22 +29,28 @@ sub new {
 
 sub getNewStatsHash {
     return {
-        stale               => 1,
-        success             => 0,
-        profit              => 0,
-        totalOutlays        => 0,
-        totalRevenues       => 0,
-        commissions         => 0,
-        regulatoryFees      => 0,
-        otherFees           => 0,
-        startDate           => undef,
-        endDate             => undef,
+        stale                       => 1,
+        success                     => 0,
+        profit                      => 0,
+        totalOutlays                => 0,
+        totalRevenues               => 0,
+        commissions                 => 0,
+        regulatoryFees              => 0,
+        otherFees                   => 0,
+        startDate                   => undef,
+        endDate                     => undef,
+        unrealizedTransactionCount  => 0,
     };
 }
 
 sub realizationCount {
     my $self = shift;
     return scalar(@{$self->{realizations}});
+}
+
+sub transactionCount {
+    my $self = shift;
+    return scalar(@{$self->{accountTransactions}});
 }
 
 sub unrealizedTransactions {
@@ -263,6 +269,7 @@ sub accountSales {
             }
         }
     }
+    $self->{stats}{unrealizedTransactionCount} = scalar(@{$self->unrealizedTransactions()});
     $self->stale(0);
     return $status;
 }
@@ -319,6 +326,7 @@ sub checkStats {
 
 sub profitOverOutlays {
     my $self = shift;
+    $self->checkStats();
     my $stats = $self->{stats};
     return $stats->{profit} / $stats->{totalOutlays};
 }
@@ -369,6 +377,12 @@ sub realizations {
     my $self = shift;
     $self->checkStats();
     return $self->{realizations};
+}
+
+sub unrealizedTransactionCount {
+    my $self = shift;
+    $self->checkStats();
+    return $self->{stats}{unrealizedTransactionCount};
 }
 
 

@@ -69,6 +69,7 @@ use_ok('Finance::StockAccount::Set');
     ok($set->startDate() == $tm1, 'Got expected start date.');
     ok($set->endDate() == $tm4, 'Got expected end date.');
     is(scalar(@{$set->unrealizedTransactions()}), 1, 'One unrealized transaction, as expected.');
+    is($set->unrealizedTransactionCount(), 1, 'Tailored method also returns one unrealized transaction.');
 }
 
 {

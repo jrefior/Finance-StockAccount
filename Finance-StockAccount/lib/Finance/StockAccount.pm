@@ -279,11 +279,6 @@ sub calculateMaxCashInvested {
     }
 }
 
-sub numberExcludedFromSet {
-    my ($self, $set) = @_;
-    return scalar(@{$set->unrealizedTransactions()});
-}
-
 sub calculateStats {
     my $self = shift;
     my ($totalOutlays, $totalRevenues, $profit, $commissions, $regulatoryFees, $otherFees, $numberExcluded) = (0, 0, 0, 0, 0, 0, 0);
@@ -292,45 +287,49 @@ sub calculateStats {
     my @allRealizations = ();
     my $stats = $self->getNewStatsHash();
     $self->{stats} = $stats;
+    $self->stale(0);
     foreach my $hashKey (keys %{$self->{sets}}) {
-        my $set = $self->getSet($hashKey);
+        my $set = $self->getSetFiltered($hashKey);
         if ($set) {
             if ($set->stale()) {
                 $set->accountSales();
             }
-            $numberExcluded += $self->numberExcludedFromSet($set);
-            $set = $self->getSetFiltered($hashKey);
-            if ($set) {
-                next unless $set->success();
+            $numberExcluded += $set->unrealizedTransactionCount();
+            next unless $set->success();
 
-                ### Simple Totals
-                $totalOutlays   += $set->totalOutlays();
-                $totalRevenues  += $set->totalRevenues();
-                $profit         += $set->profit();
-                $commissions    += $set->commissions();
-                $regulatoryFees += $set->regulatoryFees();
-                $otherFees      += $set->otherFees();
+            ### Simple Totals
+            $totalOutlays   += $set->totalOutlays();
+            $totalRevenues  += $set->totalRevenues();
+            $profit         += $set->profit();
+            $commissions    += $set->commissions();
+            $regulatoryFees += $set->regulatoryFees();
+            $otherFees      += $set->otherFees();
 
-                ### Date-Aware Totals
-                push(@allRealizations, @{$set->realizations()});
+            ### Date-Aware Totals
+            push(@allRealizations, @{$set->realizations()});
 
-                ### End-Date, Start-Date
-                my $setStart = $set->startDate();
-                $setStart or die "Didn't get set startDate for hashkey $hashKey\n";
-                if (!defined($startDate)) {
-                    $startDate = $setStart;
-                }
-                elsif ($setStart < $startDate) {
-                    $startDate = $setStart;
-                }
-                my $setEnd   = $set->endDate();
-                if (!$endDate) {
-                    $endDate = $setEnd;
-                }
-                elsif ($setEnd > $endDate) {
-                    $endDate = $setEnd;
-                }
-                $setCount++;
+            ### End-Date, Start-Date
+            my $setStart = $set->startDate();
+            $setStart or die "Didn't get set startDate for hashkey $hashKey\n";
+            if (!defined($startDate)) {
+                $startDate = $setStart;
+            }
+            elsif ($setStart < $startDate) {
+                $startDate = $setStart;
+            }
+            my $setEnd   = $set->endDate();
+            if (!$endDate) {
+                $endDate = $setEnd;
+            }
+            elsif ($setEnd > $endDate) {
+                $endDate = $setEnd;
+            }
+            $setCount++;
+        }
+        else {
+            if ($self->{skipStocks}{$hashKey}) {
+                my $set = $self->getSet($hashKey);
+                $numberExcluded += $set->transactionCount();
             }
         }
     }
@@ -362,7 +361,6 @@ sub calculateStats {
             $stats->{profitOverMaxCashInvested} = $pomci;
             $stats->{pomciOverYears}            = $pomci * $annualRatio;
             $stats->{numberOfTrades}            = $numberOfTrades;
-            $self->stale(0);
             return 1;
         }
         else {
@@ -728,6 +726,12 @@ sub numberOfTrades {
     my $self = shift;
     $self->getStats();
     return $self->{stats}{numberOfTrades};
+}
+
+sub numberExcluded {
+    my $self = shift;
+    $self->getStats();
+    return $self->{stats}{numberExcluded};
 }
 
 sub totalFees {
