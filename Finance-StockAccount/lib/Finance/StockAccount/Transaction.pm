@@ -12,6 +12,8 @@ use constant SELL       => 1;
 use constant SHORT      => 2;
 use constant COVER      => 3;
 
+my $lineFormatPattern = "%-35s %-6s %-6s %8s %7.2f %10.2f %5.2f %10.2f\n";
+
 sub new {
     my ($class, $init) = @_;
     my $self = {
@@ -350,19 +352,20 @@ sub actionString {
     }
 }
 
-sub printTransaction {
+sub string {
     my $self = shift;
-    my $pattern = "%20s %-40s\n";
+    my $pattern = "%14s %-35s\n";
+    my $string;
     foreach my $key ($self->order()) {
         if (defined($self->{$key})) {
             if ($key eq 'stock') {
                 my $symbol = $self->symbol();
                 my $exchange = $self->exchange();
                 if (defined($symbol)) {
-                    printf($pattern, 'symbol', $self->symbol());
+                    $string .= sprintf($pattern, 'symbol', $self->symbol());
                 }
                 if (defined($exchange)) {
-                    printf($pattern, 'exchange', $self->exchange());
+                    $string .= sprintf($pattern, 'exchange', $self->exchange());
                 }
             }
             else {
@@ -373,16 +376,32 @@ sub printTransaction {
                 else {
                     $value = $self->{$key};
                 }
-                printf($pattern, $key, $value);
+                $string .= sprintf($pattern, $key, $value);
             }
         }
         elsif ($key eq 'date') {
             if ($self->{tm}) {
-                printf($pattern, $key, $self->dateString());
+                $string .= sprintf($pattern, $key, $self->dateString());
             }
         }
     }
-    return 1;
+    return $string;
+}
+
+sub lineFormatHeader {
+    return sprintf("%-35s %-6s %-6s %8s %7s %10s %5s %10s\n", qw(Date Symbol Action Quantity Price Commission Fees CashEffect));
+}
+
+sub lineFormatPattern {
+    return $lineFormatPattern;
+}
+
+sub lineFormatString {
+    my $self = shift;
+    return sprintf($lineFormatPattern,
+        $self->{tm}, $self->symbol(), $self->actionString(), $self->{quantity}, $self->{price},
+        $self->{commission}, $self->{regulatoryFees} + $self->{otherFees}, $self->cashEffect()
+    );
 }
 
 

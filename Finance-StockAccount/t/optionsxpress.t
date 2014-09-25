@@ -19,7 +19,8 @@ my $amdFile     = 'dlAmdActivity.csv';
     my $st = $ox->nextAt();
     ok($st, 'Read first transaction line into a StockTransaction object.');
 
-    $st->printTransaction();
+    ok(my $string = $st->string(), 'Got transaction as string.');
+    print $string;
 
     is($st->symbol(), 'AAPL', 'Symbol matches.');
     is($st->commission(), 8.95, 'Commission matches.');

@@ -3,6 +3,8 @@ use warnings;
 
 use Test::More;
 
+my $printTransaction = 1;
+
 use_ok('Finance::StockAccount::Transaction');
 
 {
@@ -42,7 +44,13 @@ use_ok('Finance::StockAccount::Transaction');
         action          => 'sell',
     };
     my $st = Finance::StockAccount::Transaction->new($hash);
-    ok($st->printTransaction(), 'Printed the transaction.');
+    ok(my $string = $st->string(), 'Got transaction as string.');
+    ok($st->lineFormatPattern(), 'Got line format pattern.');
+    ok(my $lineFormatString = $st->lineFormatString(), 'Got transaction in line format string.');
+    ok(my $lineFormatHeader = $st->lineFormatHeader(), 'Got line format header.');
+    if ($printTransaction) {
+        print "\n", $string, "\n", $lineFormatHeader, "\n", $lineFormatString, "\n";
+    }
     ok($st, 'Instantiated new transaction object using a hash of parameters.');
     ok($st->sell(), 'Initiated as sale action.');
     ok(!$st->buy(), 'Is therefore not a buy action.');
