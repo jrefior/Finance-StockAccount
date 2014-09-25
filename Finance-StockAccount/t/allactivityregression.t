@@ -33,20 +33,19 @@ my $printStatsString = 1;
     ok(my $quarterlyStats = $sa->quarterlyStats(), 'Calculated quarterly stats.');
     ok($quarterlyStats->[4]{maxCashInvested} =~ /^13326\./, 'Got expected maxCashInvested for the fifth quarterly stats calculation.');
     ok(my $statsString = $sa->statsString(), 'Got stats string.');
-    print "Annual Ratio is ", $sa->{stats}{annualRatio}, "\n";
 
     ### Printing
     if ($printAnnualStats) {
-        print $sa->annualStatsString();
+        print "\n", $sa->annualStatsString();
     }
     if ($printQuarterlyStats) {
-        print $sa->quarterlyStatsString();
+        print "\n", $sa->quarterlyStatsString();
     }
     if ($printMonthlyStats) {
-        print $sa->monthlyStatsString();
+        print "\n", $sa->monthlyStatsString();
     }
     if ($printStatsString) {
-        print $statsString;
+        print "\n", $statsString;
     }
 }
 

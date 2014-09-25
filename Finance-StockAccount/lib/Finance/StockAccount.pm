@@ -26,6 +26,24 @@ my $statsKeys = [qw(
 )];
 my $statsKeysPattern = "%12.2f %12.2f %12.2f %12.2f %7.2f %12.2f %9.2f %7.2f %7.2f %9d";
 
+my $statsLinesArray = [
+        'First Trade Date'                  => 'startDate'                  => '%35s',
+        'Last Trade Date'                   => 'endDate'                    => '%35s',
+        'Maximum Cash Invested at Once'     => 'maxCashInvested'            => '%35.2f',
+        'Sum Outlays'                       => 'totalOutlays'               => '%35.2f',
+        'Sum Revenues'                      => 'totalRevenues'              => '%35.2f',
+        'Total Profit'                      => 'profit'                     => '%35.2f', 
+        'Profit Over Years'                 => 'profitOverYears'            => '%35.2f',
+        'Profit Over Sum Outlays'           => 'profitOverOutlays'          => '%35.2f', 
+        'Profit Over Max Cash Invested'     => 'profitOverMaxCashInvested'  => '%35.2f',
+        'The Above (^) Over Years'          => 'pomciOverYears'             => '%35.2f',
+        'Total Commissions'                 => 'commissions'                => '%35.2f',
+        'Total Regulatory Fees'             => 'regulatoryFees'             => '%35.2f',
+        'Total Other Fees'                  => 'otherFees'                  => '%35.2f',
+        'Num Trades Included in Stats'      => 'numberOfTrades'             => '%35d',
+        'Num Trades Excluded from Stats'    => 'numberExcluded'             => '%35d',
+];
+
 ### Class definition
 sub new {
     my ($class, $options) = @_;
@@ -384,30 +402,25 @@ sub getStats {
     }
 }
 
+sub stats {
+    my $self = shift;
+    $self->getStats();
+    my $stats = $self->{stats};
+    my @stats;
+    for (my $x=0; $x<scalar(@$statsLinesArray); $x+=3) {
+        my $key = $statsLinesArray->[$x+1];
+        push(@stats, $key, $stats->{$key});
+    }
+    return \@stats;
+}
+
 sub statsString {
     my $self = shift;
     $self->getStats();
     my $stats = $self->{stats};
-    my $statsString .= 'Account-level stats:' . "\n";
-    my @statsLines = (
-        'First Trade Date'                  => 'startDate'                  => '%35s',
-        'Last Trade Date'                   => 'endDate'                    => '%35s',
-        'Maximum Cash Invested at Once'     => 'maxCashInvested'            => '%35.2f',
-        'Sum Outlays'                       => 'totalOutlays'               => '%35.2f',
-        'Sum Revenues'                      => 'totalRevenues'              => '%35.2f',
-        'Total Profit'                      => 'profit'                     => '%35.2f', 
-        'Profit Over Years'                 => 'profitOverYears'            => '%35.2f',
-        'Profit Over Sum Outlays'           => 'profitOverOutlays'          => '%35.2f', 
-        'Profit Over Max Cash Invested'     => 'profitOverMaxCashInvested'  => '%35.2f',
-        'The Above (^) Over Years'          => 'pomciOverYears'             => '%35.2f',
-        'Total Commissions'                 => 'commissions'                => '%35.2f',
-        'Total Regulatory Fees'             => 'regulatoryFees'             => '%35.2f',
-        'Total Other Fees'                  => 'otherFees'                  => '%35.2f',
-        'Num Trades Included in Stats'      => 'numberOfTrades'             => '%35d',
-        'Num Trades Excluded from Stats'    => 'numberExcluded'             => '%35d',
-    );
-    for (my $x=0; $x<scalar(@statsLines); $x+=3) {
-        my ($name, $key, $valPattern) = @statsLines[$x .. $x+2];
+    my $statsString;
+    for (my $x=0; $x<scalar(@$statsLinesArray); $x+=3) {
+        my ($name, $key, $valPattern) = @$statsLinesArray[$x .. $x+2];
         $statsString .= sprintf("%30s $valPattern\n", $name, $stats->{$key});
     }
     return $statsString;
