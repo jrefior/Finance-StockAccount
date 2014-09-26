@@ -1,5 +1,7 @@
 package Finance::StockAccount::AccountTransaction;
 
+use Carp;
+
 use parent 'Finance::StockAccount::Transaction';
 
 use strict;
@@ -74,10 +76,49 @@ sub hashKey {
     return $stock->hashKey();
 }
 
+sub quantity {
+    return shift->{accounted};
+}
+
+sub proportion {
+    my $self = shift;
+    my $quantity = $self->{quantity};
+    if ($quantity) {
+        return $self->{accounted} / $quantity;
+    }
+    else {
+        carp "Attempted divide by zero - no quantity in stock transaction.";
+        return 0;
+    }
+}
+
+sub commission {
+    my $self = shift;
+    return $self->SUPER::commission() * $self->proportion();
+}
+
+sub regulatoryFees {
+    my $self = shift;
+    return $self->SUPER::regulatoryFees() * $self->proportion();
+}
+
+sub otherFees {
+    my $self = shift;
+    return $self->SUPER::otherFees() * $self->proportion();
+}
+
+sub cashEffect {
+    my $self = shift;
+    return $self->SUPER::cashEffect() * $self->proportion();
+}
+
 sub lineFormatValues {
     my $self = shift;
     my $lineFormatValues = $self->SUPER::lineFormatValues();
-    $lineFormatValues->[3] = $self->{accounted};
+    $lineFormatValues->[3] = $self->quantity();
+    $lineFormatValues->[5] = $self->commission();
+    $lineFormatValues->[6] = $self->regulatoryFees() + $self->otherFees();
+    $lineFormatValues->[7] = $self->cashEffect();
     return $lineFormatValues;
 }
 
