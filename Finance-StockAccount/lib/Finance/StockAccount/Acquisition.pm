@@ -88,6 +88,22 @@ sub init {
     }
 }
 
+sub lineFormatValues {
+    my $self = shift;
+    my $at = $self->{at};
+    my $lineFormatValues = $at->lineFormatValues();
+    $lineFormatValues->[3] = $self->{shares};
+    $lineFormatValues->[5] = $self->{commission};
+    $lineFormatValues->[6] = $self->{regulatoryFees} + $self->{otherFees};
+    $lineFormatValues->[7] = $self->{cashEffect};
+    return $lineFormatValues;
+}
+
+sub lineFormatString {
+    my $self = shift;
+    return sprintf(Finance::StockAccount::Transaction->lineFormatPattern(), @{$self->lineFormatValues()});
+}
+
 
 
 

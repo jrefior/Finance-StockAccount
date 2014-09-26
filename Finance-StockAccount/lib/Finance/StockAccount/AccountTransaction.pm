@@ -74,6 +74,18 @@ sub hashKey {
     return $stock->hashKey();
 }
 
+sub lineFormatValues {
+    my $self = shift;
+    my $lineFormatValues = $self->SUPER::lineFormatValues();
+    $lineFormatValues->[3] = $self->{accounted};
+    return $lineFormatValues;
+}
+
+sub lineFormatString {
+    my $self = shift;
+    return sprintf(Finance::StockAccount::Transaction->lineFormatPattern(), @{$self->lineFormatValues()});
+}
+
 
 1;
 
@@ -87,20 +99,24 @@ Finance::StockAccount::AccountTransaction
 
 =head1 SYNOPSIS
 
-    my $ftr = Finance::StockAccount::Stock->new({
+    my $stock = Finance::StockAccount::Stock->new({
         symbol          => 'FTR',
         exchange        => 'NASDAQ',
     });
 
-    my $st = Finance::StockAccount::Transaction->new({
-        date            => $dt,
-        action          => Finance::StockAccount::Transaction::SELL,
-        stock           => $ftr,
-        quantity        => 42,
+    my $at = Finance::StockAccount::AccountTransaction->new({
+        tm              => $tm,
+        action          => 'buy',
+        stock           => $stock,
+        quantity        => 800,
         price           => 7.11,
         commission      => 8.95,
         regulatoryFees  => 0.01,
     });
+
+    $at->accounted(100);
+
+    
 
     print $st->price(), "\n"; # prints number 7.11
 

@@ -13,36 +13,6 @@ use Finance::StockAccount::Stock;
 
 our $VERSION = '0.01';
 
-### For convenience text output
-my $statsKeyHeadings = [qw(
-    Outlays Revenues MaxInvested Profit OverOut
-    OverInvested Commiss RegFees OthFees NumTrades
-)];
-my $statsKeyHeadingsPattern = "%12s %12s %12s %12s %7s %12s %9s %7s %7s %9s";
-
-my $statsKeys = [qw(
-    totalOutlays              totalRevenues maxCashInvested profit    profitOverOutlays
-    profitOverMaxCashInvested commissions   regulatoryFees  otherFees numberOfTrades
-)];
-my $statsKeysPattern = "%12.2f %12.2f %12.2f %12.2f %7.2f %12.2f %9.2f %7.2f %7.2f %9d";
-
-my $statsLinesArray = [
-        'First Trade Date'                  => 'startDate'                  => '%35s',
-        'Last Trade Date'                   => 'endDate'                    => '%35s',
-        'Maximum Cash Invested at Once'     => 'maxCashInvested'            => '%35.2f',
-        'Sum Outlays'                       => 'totalOutlays'               => '%35.2f',
-        'Sum Revenues'                      => 'totalRevenues'              => '%35.2f',
-        'Total Profit'                      => 'profit'                     => '%35.2f', 
-        'Profit Over Years'                 => 'profitOverYears'            => '%35.2f',
-        'Profit Over Sum Outlays'           => 'profitOverOutlays'          => '%35.2f', 
-        'Profit Over Max Cash Invested'     => 'profitOverMaxCashInvested'  => '%35.2f',
-        'The Above (^) Over Years'          => 'pomciOverYears'             => '%35.2f',
-        'Total Commissions'                 => 'commissions'                => '%35.2f',
-        'Total Regulatory Fees'             => 'regulatoryFees'             => '%35.2f',
-        'Total Other Fees'                  => 'otherFees'                  => '%35.2f',
-        'Num Trades Included in Stats'      => 'numberOfTrades'             => '%35d',
-        'Num Trades Excluded from Stats'    => 'numberExcluded'             => '%35d',
-];
 
 ### Class definition
 sub new {
@@ -87,6 +57,39 @@ sub getNewStatsHash {
         monthlyStatsStale           => 1,
     };
 }
+
+
+### For convenience text output
+my $statsKeyHeadings = [qw(
+    Outlays Revenues MaxInvested Profit OverOut
+    OverInvested Commiss RegFees OthFees NumTrades
+)];
+my $statsKeyHeadingsPattern = "%12s %12s %12s %12s %7s %12s %9s %7s %7s %9s";
+
+my $statsKeys = [qw(
+    totalOutlays              totalRevenues maxCashInvested profit    profitOverOutlays
+    profitOverMaxCashInvested commissions   regulatoryFees  otherFees numberOfTrades
+)];
+my $statsKeysPattern = "%12.2f %12.2f %12.2f %12.2f %7.2f %12.2f %9.2f %7.2f %7.2f %9d";
+
+my $statsLinesArray = [
+        'First Trade Date'                  => 'startDate'                  => '%35s',
+        'Last Trade Date'                   => 'endDate'                    => '%35s',
+        'Maximum Cash Invested at Once'     => 'maxCashInvested'            => '%35.2f',
+        'Sum Outlays'                       => 'totalOutlays'               => '%35.2f',
+        'Sum Revenues'                      => 'totalRevenues'              => '%35.2f',
+        'Total Profit'                      => 'profit'                     => '%35.2f', 
+        'Profit Over Years'                 => 'profitOverYears'            => '%35.2f',
+        'Profit Over Sum Outlays'           => 'profitOverOutlays'          => '%35.2f', 
+        'Profit Over Max Cash Invested'     => 'profitOverMaxCashInvested'  => '%35.2f',
+        'The Above (^) Over Years'          => 'pomciOverYears'             => '%35.2f',
+        'Total Commissions'                 => 'commissions'                => '%35.2f',
+        'Total Regulatory Fees'             => 'regulatoryFees'             => '%35.2f',
+        'Total Other Fees'                  => 'otherFees'                  => '%35.2f',
+        'Num Trades Included in Stats'      => 'numberOfTrades'             => '%35d',
+        'Num Trades Excluded from Stats'    => 'numberExcluded'             => '%35d',
+];
+
 
 ### Methods
 sub stale {
@@ -156,6 +159,16 @@ sub getSetFiltered {
     else {
         return undef;
     }
+}
+
+sub getFilteredSets {
+    my $self = shift;
+    my @sets;
+    foreach my $hashKey (sort keys %{$self->{sets}}) {
+        my $set = $self->getSetFiltered($hashKey);
+        $set and push(@sets, $set);
+    }
+    return \@sets;
 }
 
 sub addToSet {
@@ -432,9 +445,9 @@ sub statsForPeriod {
     my @allRealizations = ();
     my $setCount = 0;
     foreach my $hashKey (keys %{$self->{sets}}) {
-        my $set = $self->getSet($hashKey);
-        $set->setDateLimit($tm1, $tm2);
-        $set = $self->getSetFiltered($hashKey);
+        my $unfilteredSet = $self->getSet($hashKey);
+        $unfilteredSet->setDateLimit($tm1, $tm2);
+        my $set = $self->getSetFiltered($hashKey);
         if ($set) {
             $setCount++;
             $totalOutlays   += $set->totalOutlays();
@@ -445,6 +458,7 @@ sub statsForPeriod {
             $otherFees      += $set->otherFees();
             push(@allRealizations, @{$set->realizations()});
         }
+        $unfilteredSet->clearDateLimit();
     }
     if ($setCount > 0 and $totalOutlays) {
         my ($maxCashInvested, $numberOfTrades) = $self->calculateMaxCashInvested(\@allRealizations);
@@ -752,6 +766,20 @@ sub totalFees {
     return $self->regulatoryFees() + $self->otherFees();
 }
 
+sub realizationsString {
+    my $self = shift;
+    # my $string;
+    my $string = Finance::StockAccount::Realization->headerString();
+    my $sets = $self->getFilteredSets();
+    foreach my $set (@$sets) {
+        $string .= $set->realizationsString();
+    }
+    return $string;
+}
+
+
+
+1;
 
 __END__
 

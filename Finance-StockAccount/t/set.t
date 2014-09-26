@@ -6,6 +6,8 @@ use Time::Moment;
 
 use_ok('Finance::StockAccount::Set');
 
+my $print = 1;
+
 {
 
     ok(my $tm1 = Time::Moment->from_string("20120131T000000Z"), 'Instantiated tm1 Time::Moment object.');
@@ -70,6 +72,10 @@ use_ok('Finance::StockAccount::Set');
     ok($set->endDate() == $tm4, 'Got expected end date.');
     is(scalar(@{$set->unrealizedTransactions()}), 1, 'One unrealized transaction, as expected.');
     is($set->unrealizedTransactionCount(), 1, 'Tailored method also returns one unrealized transaction.');
+    ok(my $realizationsString = $set->realizationsString(), 'Got realizations string.');
+    if ($print) {
+        print $realizationsString;
+    }
 }
 
 {

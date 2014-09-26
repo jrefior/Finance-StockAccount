@@ -7,10 +7,11 @@ use Finance::StockAccount::Import::OptionsXpress;
 
 
 my $allFile2014 = 'dlAllActivity201409.csv';
-my $printAnnualStats = 1;
+my $printAnnualStats = 0;
 my $printQuarterlyStats = 0;
 my $printMonthlyStats = 0;
-my $printStatsString = 1;
+my $printStatsString = 0;
+my $printRealizations = 1;
 
 {
     ok(my $ox = Finance::StockAccount::Import::OptionsXpress->new($allFile2014, -240), 'Created new OX object for all activity as of September 2014.');
@@ -33,6 +34,7 @@ my $printStatsString = 1;
     ok(my $quarterlyStats = $sa->quarterlyStats(), 'Calculated quarterly stats.');
     ok($quarterlyStats->[4]{maxCashInvested} =~ /^13326\./, 'Got expected maxCashInvested for the fifth quarterly stats calculation.');
     ok(my $statsString = $sa->statsString(), 'Got stats string.');
+    ok(my $realizationsString = $sa->realizationsString(), 'Got realizations string.');
 
     ### Printing
     if ($printAnnualStats) {
@@ -46,6 +48,9 @@ my $printStatsString = 1;
     }
     if ($printStatsString) {
         print "\n", $statsString;
+    }
+    if ($printRealizations) {
+        print "\n", $realizationsString;
     }
 }
 

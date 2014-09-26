@@ -48,14 +48,19 @@ sub realizationCount {
     return scalar(@{$self->{realizations}});
 }
 
-sub transactionCount {
-    my $self = shift;
-    return scalar(@{$self->{accountTransactions}});
-}
-
 sub unrealizedTransactions {
     my $self = shift;
     return [grep { $_->accounted() == 0 } @{$self->{accountTransactions}}];
+}
+
+sub realizedTransactions {
+    my $self = shift;
+    return [grep { $_->accounted() > 0 } @{$self->{accountTransactions}}];
+}
+
+sub transactionCount {
+    my $self = shift;
+    return scalar(@{$self->realizedTransactions()});
 }
 
 sub stale {
@@ -385,8 +390,14 @@ sub unrealizedTransactionCount {
     return $self->{stats}{unrealizedTransactionCount};
 }
 
-
-
+sub realizationsString {
+    my $self = shift;
+    my $string;
+    foreach my $realization (@{$self->{realizations}}) {
+        $string .= '='x94 . "\n" . $realization->string() . "\n";
+    }
+    return $string;
+}
 
 
 

@@ -396,12 +396,17 @@ sub lineFormatPattern {
     return $lineFormatPattern;
 }
 
+sub lineFormatValues {
+    my $self = shift;
+    return [
+        $self->{tm} || '', $self->symbol(), $self->actionString(), $self->{quantity}, $self->{price} || 0,
+        $self->{commission} || 0, ($self->{regulatoryFees} + $self->{otherFees}) || 0, $self->cashEffect() || 0
+    ];
+}
+
 sub lineFormatString {
     my $self = shift;
-    return sprintf($lineFormatPattern,
-        $self->{tm}, $self->symbol(), $self->actionString(), $self->{quantity}, $self->{price},
-        $self->{commission}, $self->{regulatoryFees} + $self->{otherFees}, $self->cashEffect()
-    );
+    return sprintf($lineFormatPattern, @{$self->lineFormatValues()});
 }
 
 

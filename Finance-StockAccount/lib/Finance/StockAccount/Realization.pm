@@ -9,6 +9,9 @@ use Carp;
 use Finance::StockAccount::AccountTransaction;
 use Finance::StockAccount::Acquisition;
 
+# qw(Symbol ROI Outlays Revenues Profit)
+my $summaryPattern = "%-6s %7.4f %12.2f %12.2f %53.2f\n";
+
 sub new {
     my ($class, $init) = @_;
     my $self = {
@@ -21,7 +24,6 @@ sub new {
         commissions         => 0,
         regulatoryFees      => 0,
         otherFees           => 0,
-        roi                 => 0,
     };
     bless($self, $class);
     $init and $self->set($init);
@@ -92,7 +94,7 @@ sub set {
     return $status;
 }
 
-sub roi {
+sub ROI {
     my $self = shift;
     my $costBasis = $self->{costBasis};
     if ($costBasis) {
@@ -141,6 +143,36 @@ sub realized            { return shift->{realized};             }
 sub commissions         { return shift->{commissions};          }
 sub regulatoryFees      { return shift->{regulatoryFees};       }
 sub otherFees           { return shift->{otherFees};            }
+
+sub headerString {
+    return Finance::StockAccount::Transaction->lineFormatHeader() . '-'x94 . "\n" .
+        sprintf("%-6s %7s %12s %12s %53s\n", qw(Symbol ROI Outlays Revenues Profit));
+}
+
+sub divestmentLineFormatString {
+    my $self = shift;
+    my $divestment = $self->{divestment};
+    my $proportion = $divestment->accounted() / $divestment->quantity();
+    my $lineFormatValues = $divestment->lineFormatValues();
+    $lineFormatValues->[6] *= $proportion;
+    $lineFormatValues->[7] *= $proportion;
+    $lineFormatValues->[8] *= $proportion;
+    return sprintf(Finance::StockAccount::Transaction->lineFormatPattern(), @$lineFormatValues);
+}
+
+sub string {
+    my $self = shift;
+    my $divestment = $self->{divestment};
+    my $string;
+    foreach my $acquisition (@{$self->{acquisitions}}) {
+        $string .= $acquisition->lineFormatString();
+    }
+    $string .= $self->divestmentLineFormatString . '-'x94 . "\n" .
+        sprintf($summaryPattern, $divestment->symbol(), $self->ROI() || 0, (0 - $self->{costBasis}) || 0, $self->{revenue} || 0, $self->{realized} || 0);
+    return $string;
+}
+
+
 
 
 

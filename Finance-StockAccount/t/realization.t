@@ -5,6 +5,8 @@ use Test::More;
 
 use_ok('Finance::StockAccount::Realization');
 
+my $print = 1;
+
 my $initAt1 = {
     symbol          => 'ESI',
     action          => 'buy',
@@ -47,6 +49,11 @@ ok(my $at3 = Finance::StockAccount::AccountTransaction->new($initAt3), 'Created 
     ok(my $profit = $realization->realized(), 'Got realized profit.');
     my $expectedReturn = $at1->cashEffect() + $at2->cashEffect + $at3->cashEffect();
     is($profit, $expectedReturn, "Received expected profit number: $profit.\n");
+    ok(my $headerString = $realization->headerString(), 'Got header string.');
+    ok(my $string = $realization->string(), 'Got realization as string.');
+    if ($print) {
+        print "\n", $headerString, "\n", $string, "\n";
+    }
 }
 {
     $at3->quantity(250);
