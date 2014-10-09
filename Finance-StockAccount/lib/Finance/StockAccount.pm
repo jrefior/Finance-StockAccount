@@ -292,7 +292,7 @@ sub staleSets {
 
 sub calculateMaxCashInvested {
     my ($self, $realizations) = @_;
-    my @allTransactions = sort { $a->tm() <=> $b->tm() } map { @{$_->acquisitions()}, $_->divestment() } @$realizations;
+    my @allTransactions = sort { $a->tm() <=> $b->tm() } map { @{$_->acquisitions()->[0]}, $_->divestment() } @$realizations;
     my $numberOfTrades = scalar(@allTransactions);
     @$realizations = ();
     my ($total, $max) = (0, 0);

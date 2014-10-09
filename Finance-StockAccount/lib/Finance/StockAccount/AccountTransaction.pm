@@ -80,6 +80,10 @@ sub quantity {
     return shift->{accounted};
 }
 
+sub underlyingQuantity {
+    return shift->{quantity};
+}
+
 sub proportion {
     my $self = shift;
     my $quantity = $self->{quantity};

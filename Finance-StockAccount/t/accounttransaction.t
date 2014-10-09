@@ -39,6 +39,7 @@ my $print = 1;
     ok($at->accountShares(5), 'Accounted half the shares.');
     is($at->proportion, '0.5', 'Got expected proportion.');
     is($at->quantity(), 5, 'Got expected quantity.');
+    is($at->underlyingQuantity(), 10, 'Got expected underlying quantity.');
     is($at->commission(), 5, 'Got expected commission.');
     is($at->regulatoryFees(), 5, 'Got expected regulatory fees.');
     is($at->otherFees(), 5, 'Got expected other fees.');
