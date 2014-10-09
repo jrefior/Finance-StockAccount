@@ -7,6 +7,7 @@ use Time::Moment;
 use Carp;
 
 use Finance::StockAccount::AccountTransaction;
+use Finance::StockAccount::Acquisition;
 
 # qw(Symbol ROI Outlays Revenues Profit)
 my $summaryPattern = "%-6s %7.4f %12.2f %12.2f %53.2f\n";
@@ -30,52 +31,35 @@ sub new {
 }
 
 sub addAcquisition {
-    my ($self, $priorPurchase, $dateLimitPortion) = @_;
+    my ($self, $acquisition, $dateLimitPortion) = @_;
     if (!defined($dateLimitPortion)) {
         $dateLimitPortion = 1; # Assume no date limit restriction if none specified, i.e., none by default
     }
+    my $shares = $acquisition->shares();
     my $divestment = $self->{divestment};
-    my $divestmentAvailable = $divestment->available();
-    if (!$divestmentAvailable) {
-        carp "No shares available in divestment to account to acquisition.";
-        return 0;
-    }
-    my $shares = $priorPurchase->accountShares($divestmentAvailable);
-    $divestment->accountShares($shares);
-    my $divQuantity = $divestment->underlyingQuantity();
+    my $divQuantity = $divestment->quantity();
     my $divestedPortion;
     if ($divQuantity) {
         $divestedPortion = $shares / $divQuantity;
     }
     else {
         croak "No shares divested in transaction, cannot proceed with realization.";
-        return 0;
     }
-    print "Raw divestement cash effect is ", $divestment->cashEffect(), "\n";
 
     my $divCommission     += $divestedPortion * $divestment->commission();
     my $divRegulatoryFees += $divestedPortion * $divestment->regulatoryFees();
     my $divOtherFees      += $divestedPortion * $divestment->otherFees();
 
-    my $costProportion = $shares / $priorPurchase->quantity();
-    
-    my $costCashEffect      = $costProportion * $priorPurchase->cashEffect();
-    my $costCommission      = $costProportion * $priorPurchase->commission();
-    my $costRegulatoryFees  = $costProportion * $priorPurchase->regulatoryFees();
-    my $costOtherFees       = $costProportion * $priorPurchase->otherFees();
-
-    my $costBasis = 0 - $dateLimitPortion * $costCashEffect;
-    print "Cost basis is $costBasis\n";
+    my $costBasis = 0 - $dateLimitPortion * $acquisition->cashEffect();
     my $revenue   = $dateLimitPortion * $divestedPortion * $divestment->cashEffect();
-    print "Revenue is $revenue\n";
     $self->{costBasis}      += $costBasis;
     $self->{revenue}        += $revenue;
     $self->{realized}       += $revenue - $costBasis;
-    $self->{commissions}    += $dateLimitPortion * ($costCommission     + $divCommission    );
-    $self->{regulatoryFees} += $dateLimitPortion * ($costRegulatoryFees + $divRegulatoryFees);
-    $self->{otherFees}      += $dateLimitPortion * ($costOtherFees      + $divOtherFees     );
+    $self->{commissions}    += $dateLimitPortion * ($acquisition->commission()     + $divCommission    );
+    $self->{regulatoryFees} += $dateLimitPortion * ($acquisition->regulatoryFees() + $divRegulatoryFees);
+    $self->{otherFees}      += $dateLimitPortion * ($acquisition->otherFees()      + $divOtherFees     );
 
-    push(@{$self->{acquisitions}}, [$priorPurchase, $shares]);
+    push(@{$self->{acquisitions}}, $acquisition);
     return 1;
 }
 
@@ -132,10 +116,10 @@ sub startDate {
     my $startDate;
     foreach my $acquisition (@{$self->{acquisitions}}) {
         if (!$startDate) {
-            $startDate = $acquisition->[0]->tm();
+            $startDate = $acquisition->tm();
         }
         else {
-            my $tm = $acquisition->[0]->tm();
+            my $tm = $acquisition->tm();
             if ($tm < $startDate) {
                 $startDate = $tm;
             }
@@ -181,7 +165,7 @@ sub string {
     my $divestment = $self->{divestment};
     my $string;
     foreach my $acquisition (@{$self->{acquisitions}}) {
-        $string .= $acquisition->[0]->lineFormatString();
+        $string .= $acquisition->lineFormatString();
     }
     $string .= $self->divestmentLineFormatString . '-'x94 . "\n" .
         sprintf($summaryPattern, $divestment->symbol(), $self->ROI() || 0, (0 - $self->{costBasis}) || 0, $self->{revenue} || 0, $self->{realized} || 0);

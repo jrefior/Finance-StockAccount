@@ -171,7 +171,7 @@ sub printTransactionDates {
 }
 
 sub dateLimitPortion {
-    my ($self, $divestment, $priorPurchase) = @_;
+    my ($self, $divestment, $acquisition) = @_;
     my $dateLimit = $self->{dateLimit};
     if (!$dateLimit->{start} or !$dateLimit->{end}) {
         return 1;
@@ -179,7 +179,7 @@ sub dateLimitPortion {
     else {
         my $limitStart  = $dateLimit->{start};
         my $limitEnd    = $dateLimit->{end};
-        my $realStart   = $priorPurchase->tm();
+        my $realStart   = $acquisition->tm();
         my $realEnd     = $divestment->tm();
         my $startWithinLimit = ($realStart <= $limitEnd and $realStart >= $limitStart) ? 1 : 0;
         my $endWithinLimit   = ($realEnd   <= $limitEnd and $realEnd   >= $limitStart) ? 1 : 0;
@@ -226,11 +226,14 @@ sub accountPriorPurchase {
     
     my @priorPurchases = sort { $self->cmpPrice($a, $b) } grep { $_->possiblePurchase($actionString) } @{$accountTransactions}[0 .. $index];
     foreach my $priorPurchase (@priorPurchases) {
-        my $divestmentAvailable = $divestment->available();
-        last unless $divestmentAvailable;
-        if ($priorPurchase->available()) {
-            my $dateLimitPortion = $self->dateLimitPortion($divestment, $priorPurchase);
-            $realization->addAcquisition($priorPurchase, $dateLimitPortion);
+        my $sharesDivested = $divestment->available();
+        last unless $sharesDivested;
+        my $accounted = $priorPurchase->accountShares($sharesDivested);
+        if ($accounted) {
+            my $acquisition = Finance::StockAccount::Acquisition->new($priorPurchase, $accounted);
+            my $dateLimitPortion = $self->dateLimitPortion($divestment, $acquisition);
+            $realization->addAcquisition($acquisition, $dateLimitPortion);
+            $divestment->accountShares($accounted);
         }
     }
 
