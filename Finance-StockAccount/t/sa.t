@@ -104,9 +104,38 @@ use_ok('Finance::StockAccount');
     ok($sa->allowZeroPrice(0), 'Set allowZeroPrice setting.');
     ok(!$sa->allowZeroPrice(), 'Got value I set it to.');
 }
-
-
-
+{
+    my $buy1 = {        #  -$2010.00
+        symbol          => 'AAA',
+        dateString      => '20120421T193800Z',
+        action          => 'buy',
+        quantity        => 100,
+        price           => 20,
+        commission      => 10,
+    };
+    my $sell1 = {       # +$1090
+        symbol          => 'AAA',
+        dateString      => '20120422T193800Z',
+        action          => 'sell',
+        quantity        => 50,
+        price           => 22,
+        commission      => 10,
+    };
+    my $sell2 = {       # +$1190
+        symbol          => 'AAA',
+        dateString      => '20120423T193800Z',
+        action          => 'sell',
+        quantity        => 50,
+        price           => 24,
+        commission      => 10,
+    };
+    ok(my $sa = Finance::StockAccount->new(), 'Created new stock account.');
+    ok($sa->stockTransaction($buy1), 'Added buy1 transaction.');
+    ok($sa->stockTransaction($sell1), 'Added sell1 transaction.');
+    is($sa->profit(), 85, 'Got expected profit from just first sale.');
+    ok($sa->stockTransaction($sell2), 'Added sell2 transaction.');
+    is($sa->profit(), 270, 'Got expected total profit.');
+}
 
 
 done_testing();
