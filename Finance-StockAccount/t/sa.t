@@ -132,6 +132,7 @@ use_ok('Finance::StockAccount');
     ok(my $sa = Finance::StockAccount->new(), 'Created new stock account.');
     ok($sa->stockTransaction($buy1), 'Added buy1 transaction.');
     ok($sa->stockTransaction($sell1), 'Added sell1 transaction.');
+    is($sa->commissions(), 15, 'Got expected commissions after first sale.');
     is($sa->profit(), 85, 'Got expected profit from just first sale.');
     ok($sa->stockTransaction($sell2), 'Added sell2 transaction.');
     is($sa->profit(), 270, 'Got expected total profit.');
