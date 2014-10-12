@@ -55,6 +55,7 @@ use Test::More;
     my $profitOverOutlays           = $sa->profitOverOutlays();         # 0.17
     my $profitOverYears             = $sa->profitOverYears();           # 31046.25
     my $commissions                 = $sa->commissions();               # 65
+    my $numberOfTrades              = $sa->numberOfTrades();            # 5
 
     is($profit, 340, 'Got expected profit.');
     is($maxCashInvestment, 2000, 'Got expected maxCashInvested.');
@@ -62,6 +63,7 @@ use Test::More;
     is($profitOverMaxCashInvested, 0.17, 'Got expected profitOverMaxCashInvested.');
     is($profitOverYears, 31046.25, 'Got expected profit divided by years.  Doing pretty well for yourself!');
     is($commissions, 65, 'Got expected commissions.');
+    is($numberOfTrades, 5, 'Got expected number of trades.');
 }
 
 {

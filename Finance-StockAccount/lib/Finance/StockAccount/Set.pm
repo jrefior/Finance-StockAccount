@@ -60,7 +60,20 @@ sub realizedTransactions {
 
 sub transactionCount {
     my $self = shift;
-    return scalar(@{$self->realizedTransactions()});
+    my $count = 0;
+    foreach my $at (@{$self->{accountTransactions}}) {
+        $at->accounted() > 0 and $count++;
+    }
+    return $count;
+}
+
+sub unrealizedTransactionCount {
+    my $self = shift;
+    my $count = 0;
+    foreach my $at (@{$self->{accountTransactions}}) {
+        $at->accounted() == 0 and $count++;
+    }
+    return $count;
 }
 
 sub stale {
@@ -274,7 +287,6 @@ sub accountSales {
             }
         }
     }
-    $self->{stats}{unrealizedTransactionCount} = scalar(@{$self->unrealizedTransactions()});
     $self->stale(0);
     return $status;
 }
@@ -382,12 +394,6 @@ sub realizations {
     my $self = shift;
     $self->checkStats();
     return $self->{realizations};
-}
-
-sub unrealizedTransactionCount {
-    my $self = shift;
-    $self->checkStats();
-    return $self->{stats}{unrealizedTransactionCount};
 }
 
 sub realizationsString {

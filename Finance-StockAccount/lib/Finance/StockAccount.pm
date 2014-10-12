@@ -312,7 +312,7 @@ sub calculateMaxCashInvested {
 
 sub calculateStats {
     my $self = shift;
-    my ($totalOutlays, $totalRevenues, $profit, $commissions, $regulatoryFees, $otherFees, $numberExcluded) = (0, 0, 0, 0, 0, 0, 0);
+    my ($totalOutlays, $totalRevenues, $profit, $commissions, $regulatoryFees, $otherFees, $numberExcluded, $transactionCount) = (0, 0, 0, 0, 0, 0, 0, 0);
     my ($startDate, $endDate);
     my $setCount = 0;
     my @allRealizations = ();
@@ -335,6 +335,7 @@ sub calculateStats {
             $commissions    += $set->commissions();
             $regulatoryFees += $set->regulatoryFees();
             $otherFees      += $set->otherFees();
+            $transactionCount   += $set->transactionCount();
 
             ### Date-Aware Totals
             push(@allRealizations, @{$set->realizations()});
@@ -385,13 +386,13 @@ sub calculateStats {
             my $annualRatio                     = $secondsInYear / $secondsInAccount;
             $stats->{annualRatio}               = $annualRatio;
             $stats->{profitOverYears}           = $profit * $annualRatio;
-            my ($maxCashInvested, $numberOfTrades) = $self->calculateMaxCashInvested(\@allRealizations);
+            my $maxCashInvested = $self->calculateMaxCashInvested(\@allRealizations);
             $stats->{maxCashInvested}           = $maxCashInvested;
             $stats->{profitOverOutlays}         = $profit / $totalOutlays;
             my $pomci                           = $profit / $maxCashInvested;
             $stats->{profitOverMaxCashInvested} = $pomci;
             $stats->{pomciOverYears}            = $pomci * $annualRatio;
-            $stats->{numberOfTrades}            = $numberOfTrades;
+            $stats->{numberOfTrades}            = $transactionCount;
             return 1;
         }
         else {
@@ -441,7 +442,7 @@ sub statsString {
 
 sub statsForPeriod {
     my ($self, $tm1, $tm2) = @_;
-    my ($totalOutlays, $totalRevenues, $profit, $commissions, $regulatoryFees, $otherFees) = (0, 0, 0, 0, 0);
+    my ($totalOutlays, $totalRevenues, $profit, $commissions, $regulatoryFees, $otherFees, $transactionCount) = (0, 0, 0, 0, 0, 0, 0);
     my @allRealizations = ();
     my $setCount = 0;
     foreach my $hashKey (keys %{$self->{sets}}) {
@@ -450,18 +451,19 @@ sub statsForPeriod {
         my $set = $self->getSetFiltered($hashKey);
         if ($set) {
             $setCount++;
-            $totalOutlays   += $set->totalOutlays();
-            $totalRevenues  += $set->totalRevenues();
-            $profit         += $set->profit();
-            $commissions    += $set->commissions();
-            $regulatoryFees += $set->regulatoryFees();
-            $otherFees      += $set->otherFees();
+            $totalOutlays       += $set->totalOutlays();
+            $totalRevenues      += $set->totalRevenues();
+            $profit             += $set->profit();
+            $commissions        += $set->commissions();
+            $regulatoryFees     += $set->regulatoryFees();
+            $otherFees          += $set->otherFees();
+            $transactionCount   += $set->transactionCount();
             push(@allRealizations, @{$set->realizations()});
         }
         $unfilteredSet->clearDateLimit();
     }
     if ($setCount > 0 and $totalOutlays) {
-        my ($maxCashInvested, $numberOfTrades) = $self->calculateMaxCashInvested(\@allRealizations);
+        my $maxCashInvested = $self->calculateMaxCashInvested(\@allRealizations);
         return {
             totalOutlays                => $totalOutlays,
             totalRevenues               => $totalRevenues,
@@ -472,7 +474,7 @@ sub statsForPeriod {
             commissions                 => $commissions,
             regulatoryFees              => $regulatoryFees,
             otherFees                   => $otherFees,
-            numberOfTrades              => $numberOfTrades,
+            numberOfTrades              => $transactionCount,
         };
     }
     else {
@@ -873,7 +875,10 @@ commissions.
     # How much did you pay your broker?
     $sa->commissions();               # 65
 
-    # Get an list of statistics you can loop through
+    # How many transactions were counted in these statistics?
+    $sa->numberOfTrades();            # 5
+
+    # Get a list of statistics you can loop through
     my $stats = $sa->stats();
 
     # or get it broken down by date period
@@ -896,7 +901,7 @@ commissions.
     $sa->resetSkipStocks();
 
     # Curious how the module is doing its accounting?
-    # Then print the realizations (matches of acquisitions to divestment):
+    # Print the realizations (matches of acquisitions to divestment):
     print $sa->realizationsString();
 
 

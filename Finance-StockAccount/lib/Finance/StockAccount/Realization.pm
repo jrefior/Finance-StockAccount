@@ -154,9 +154,9 @@ sub divestmentLineFormatString {
     my $divestment = $self->{divestment};
     my $proportion = $divestment->accounted() / $divestment->quantity();
     my $lineFormatValues = $divestment->lineFormatValues();
+    $lineFormatValues->[5] *= $proportion;
     $lineFormatValues->[6] *= $proportion;
     $lineFormatValues->[7] *= $proportion;
-    $lineFormatValues->[8] *= $proportion;
     return sprintf(Finance::StockAccount::Transaction->lineFormatPattern(), @$lineFormatValues);
 }
 

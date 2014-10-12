@@ -64,6 +64,8 @@ my $print = 1;
     ok(my $set = Finance::StockAccount::Set->new([$at2, $at5, $at4, $at3, $at1]), 'Instantiated new Set object.');
     ok($set->printTransactionDates(), 'Print transaction dates.');
     ok($set->accountSales(), 'Accounted for sales.');
+    is($set->transactionCount(), 4, 'Got expected transaction count.');
+    is($set->unrealizedTransactionCount(), 1, 'Got expected count of unrealized transactions.');
     is($set->totalOutlays(), 3673, 'Cost (totalOutlays) as expected.');
     is($set->totalRevenues(), 4040, 'Benefit (revenue) as expected.');
     is($set->profit(), 367, 'Profit as expected.');
