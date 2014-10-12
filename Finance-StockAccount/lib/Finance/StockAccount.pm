@@ -801,17 +801,104 @@ Version 0.01
 Analyze past transactions in a personal stock account.  Find out your profit,
 annual profit, quarterly profit, monthly profit, or profit for any other
 arbitrary date/time range.  Discover what the most cash you had invested in
-stocks was, over the course of your account from when it opened to the present,
-or for any period.  Call that your totalOutlays and learn how the ratio of profit
-to that totalOutlays changed from period to period.  Find out how much you spent
-on commissions in a year.
-
-Perhaps a little code snippet.
+stocks at once was, over the course of your account from when it opened to the
+present, or for any period.  Call that your totalOutlays and learn how the
+ratio of profit to that totalOutlays changed from period to period.  Find out
+how much you spent on commissions in a year.  Learn how much you spent on
+commissions.
 
     use Finance::StockAccount;
 
-    my $foo = Finance::StockAccount->new();
-    ...
+    # Object-oriented, so instantiate your object
+    my $sa = Finance::StockAccount->new();
+
+    # Now add your trades
+    # One (fake/fantasy) trade a day for a week in January...
+    $sa->stockTransaction({ # total cost: 1000
+        symbol          => 'AAA',
+        dateString      => '20140106T150500Z', # This is a Time::Moment string, more on that below
+        action          => 'buy',
+        quantity        => 198,
+        price           => 5,
+        commission      => 10,
+    });
+    $sa->stockTransaction({ # total cost: 1000
+        symbol          => 'BBB',
+        dateString      => '20140107T150500Z',
+        action          => 'buy',
+        quantity        => 99,
+        price           => 10,
+        commission      => 10,
+    });
+    $sa->stockTransaction({ # total proceeds: 600
+        symbol          => 'AAA',
+        dateString      => '20140108T150500Z',
+        action          => 'sell',
+        quantity        => 100,
+        price           => 6.10,
+        commission      => 10,
+    });
+    $sa->stockTransaction({ # total proceeds: 1070
+        symbol          => 'BBB',
+        dateString      => '20140109T150500Z',
+        action          => 'sell',
+        quantity        => 99,
+        price           => 11,
+        commission      => 19,
+    });
+    $sa->stockTransaction({ # total proceeds: 670
+        symbol          => 'AAA',
+        dateString      => '20140110T150500Z',
+        action          => 'sell',
+        quantity        => 98,
+        price           => 7,
+        commission      => 16,
+    });
+
+    # How much did you make (or lose)?
+    $sa->profit();                    # 340
+
+    # What was the most cash you had invested in stocks at once?
+    $sa->maxCashInvested();           # 2000
+
+    # How much profit did you make as a share of the max you invested?
+    $sa->profitOverMaxCashInvested(); # 0.17
+
+    # Prefer just profit over outlays?  No problem.  Oh look it happens to be the same in this case
+    $sa->profitOverOutlays();         # 0.17
+
+    # If you kept up that rate of profit over a year how much would you make?
+    $sa->profitOverYears();           # 31046.25 (Wish I were that lucky.)
+
+    # How much did you pay your broker?
+    $sa->commissions();               # 65
+
+    # Get an list of statistics you can loop through
+    my $stats = $sa->stats();
+
+    # or get it broken down by date period
+    $sa->annualStats();
+    $sa->quarterlyStats();
+    $sa->monthlyStats();
+
+    # Want me to iterate through it and make it a string for you?
+    print $sa->statsString();
+
+    # Want that by date too?
+    print $sa->annualStatsString();
+    print $sa->quarterlyStatsString();
+    print $sa->monthlyStatsString();
+
+    # Need to exclude a couple stocks from analysis?
+    $sa->skipStocks(qw(AAA BBB));
+
+    # Include AAA and BBB again
+    $sa->resetSkipStocks();
+
+    # Curious how the module is doing its accounting?
+    # Then print the realizations (matches of acquisitions to divestment):
+    print $sa->realizationsString();
+
 
 My online brokerage account does not allow the user to easily see how her stock
 account is performing.  With a little research, I found this was common
