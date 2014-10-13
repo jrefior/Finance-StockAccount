@@ -925,14 +925,13 @@ newest, and one or more prior acquisitions (buys or shorts) are matched with
 the sale by availability (meaning not all shares are already tied to another
 divestment) and lowest cost of the acquisition.
 
-I also looked at the "Analyze" tools in my OptionsXpress online brokerage
-account and saw it always used a "Last In, First Out" accounting method, which
-is ridiculous and was unacceptable to me.   .the one that matched my primary
-intention when trading which was usually to realize as much gain as possible.
+Looking at the "Analyze" tools in my OptionsXpress online brokerage account and
+saw it always used a "Last In, First Out" accounting method, which, frankly, is
+ridiculous in terms of evaluating my stock trading performance.
 
 Dates are stored as Time::Moment objects, and may be specified either as a
-Time::Moment object or one of the string formats natively understood by
-Time::Moment.
+Time::Moment object (using the 'tm' property) or one of the string formats
+natively understood by Time::Moment (using the 'dateString' property).
 
 If you happen to have an OptionsXpress online brokerage account you can import
 the whole thing in one go with Finance::StockAccount::Import::OptionsXpress.
@@ -940,12 +939,12 @@ the whole thing in one go with Finance::StockAccount::Import::OptionsXpress.
 account to help this along!)
 
 Along the way I tried to create a pure stock transaction class and a pure stock
-class, please look at
+class.  If you need such a thing, please look at
 
 Finance::StockAccount::Transaction
 Finance::StockAccount::Stock
 
-for those.
+which are included in the Finance::StockAccount installation.
 
 =head1 EXPLANATION
 
@@ -954,7 +953,7 @@ high finance wall street type who already has a bunch of expensive tools
 available to him) a meaninful sense of how his or her personal stock account is
 doing.  It turns out a lot of both online and offline brokerages and financial
 advisers and institutions hide that information from their users on the theory
-that if you knew how poorly you were really doing, you would take your money
+that if you knew how you were really doing, you would take your money
 elsewhere, or bug them with questions and demands for improvement.
 
 With these modules you can get a better understanding of the performance of
@@ -967,7 +966,7 @@ or monthly data.
 This set of modules deals purely in stock transactions.  There is no concept of
 cash transactions.  Currently there is not even a concept of dividends, though
 I intend to add that.  So far it is purely concerned with acquisitions and
-divestments: their timing, value, and relative value.
+divestments: their timing, absolute value, and relative value.
 
 =head2 Terminology
 
@@ -995,6 +994,32 @@ useful for evaluating stock account performance.  A successful match between a
 divestment and one or more acquisitions is called a "realization" because it
 represents the consummation or realization of the totalOutlays.
 
+=head4 Outlay
+
+How much cash was spent on an acquisition transaction, including commissions
+and fees.
+
+=head4 Revenue
+
+How much cash was received in a divestment, after commissions and fees have been subtracted.
+
+=head2 Statistics, or "Why does that number look wrong?"
+
+Unmatched transactions are not included in statistics: an acquisition that
+cannot be paired with a divestment, or a divestment that cannot be paired with
+an acquisition, is simply left out or ignored.  Here's an example to illustrate
+why this is necessary: Suppose you buy $5,000 worth of stock 'FOO', but you
+haven't sold it yet.  There is no way to evaluate whether that was a profitable
+choice or not.  It could end up making you a millionaire, or its value could
+drop to $0.
+
+So when you see some statistics that look different from what you expected, one
+of the things you might consider is whether any transactions were left out of
+the analysis.  You can check that with the numberOfTrades and numberExcluded
+methods (see below).  If you want more granular information, you might consider
+diving down to the Finance::StockAccount::Set level, which provides more tools
+for looking at the accounting of all trades in a specific stock.
+
 =head1 METHODS
 
 
@@ -1020,8 +1045,9 @@ This option can also be set via method (see allowZeroPrice method below).
 =head2 stockTransaction
 
 
-This is the intended means of adding transactions to a StockAccount object.
-An instantiation hash is passed in.  Here is an example:
+This is the intended means of adding transactions to a StockAccount object.  An
+instantiation hash is passed in.  Here is an example, me buying fifty shares of
+stock in Twitter:
 
     $sa->stockTransaction({
         symbol          => 'TWTR',
@@ -1045,6 +1071,8 @@ above.  An optional exchange string may be passed in as well:
 Alternatively, a stock object can be created using Finance::StockAccount::Stock
 and passed in with the stock key:
 
+    use Finance::StockAccount;
+
     my $stock = Finance::StockAccount::Stock->new({
         symbol          => 'TWTR',
         exchange        => 'NYSE', # optional
@@ -1058,7 +1086,7 @@ The same $stock object could then be used over and over to pass in transactions
 on that stock. But even if you use a symbol string each time, they will be
 treated as the same stock.  An exchange modifies a stock, so you could have two
 stocks with the same symbol traded on two different exchanges and they would be
-kept separate inside your StockAccount object. 
+kept separate in StockAccount accounting. 
 
 B<Required: date>
 
@@ -1125,9 +1153,57 @@ A numeric value for price is also required:
 By default, the price is required to be greater than zero, but see the
 'allowZeroPrice' section below.
 
+Additional information is not required, but can optionally be set when adding a
+stock transaction:
+
+B<Optional: commission>
+
+    $sa->stockTransaction({
+        ...
+        commission      => 8.95,
+        ...
+    });
+
+B<Optional: regulatoryFees>
+
+In the United States the Securities and Exchange Commission imposes regulatory
+fees on stock brokers or dealers.  Instead of paying these with their profits,
+these for-profit companies often pass these fees onto their customers directly.
+The C<regulatoryFees> property could be used for similar purposes in other
+jurisdictions.
+
+See http://www.sec.gov/answers/sec31.htm for more information.
+
+    $sa->stockTransaction({
+        ...
+        regulatoryFees  => 0.04,
+        ...
+    });
+
+B<Optional: otherFees>
+
+Any other fees that your jurisdiction, exchange, or broker adds in addition to
+commission and regulatory fees.
+
+    $sa->stockTransaction({
+        ...
+        otherFees       => 8.95,
+        ...
+    });
+
+
 head2 profit
 
 Returns the numeric total profit (or loss) for all realizations in the stock account.
+
+head2 commissions
+
+Returns the numeric total commissions paid on all included transactions.
+
+head2 maxCashInvested
+
+Returns the maximum cash value invested in stocks at once.  Uses transaction
+dates and outlays to find this value.
 
 head2 skipStocks
 
