@@ -816,7 +816,7 @@ year.  Learn how much you spent on commissions.
 
     # Now add your trades
     # One (fake/fantasy) trade a day for a week in January...
-    $sa->stockTransaction({ # total cost: 1000
+    $sa->stockTransaction({ # total outlay: 1000
         symbol          => 'AAA',
         dateString      => '20140106T150500Z', # This is a Time::Moment string, more on that below
         action          => 'buy',
@@ -824,7 +824,7 @@ year.  Learn how much you spent on commissions.
         price           => 5,
         commission      => 10,
     });
-    $sa->stockTransaction({ # total cost: 1000
+    $sa->stockTransaction({ # total outlay: 1000
         symbol          => 'BBB',
         dateString      => '20140107T150500Z',
         action          => 'buy',
@@ -832,7 +832,7 @@ year.  Learn how much you spent on commissions.
         price           => 10,
         commission      => 10,
     });
-    $sa->stockTransaction({ # total proceeds: 600
+    $sa->stockTransaction({ # total revenue: 600
         symbol          => 'AAA',
         dateString      => '20140108T150500Z',
         action          => 'sell',
@@ -840,7 +840,7 @@ year.  Learn how much you spent on commissions.
         price           => 6.10,
         commission      => 10,
     });
-    $sa->stockTransaction({ # total proceeds: 1070
+    $sa->stockTransaction({ # total revenue: 1070
         symbol          => 'BBB',
         dateString      => '20140109T150500Z',
         action          => 'sell',
@@ -848,7 +848,7 @@ year.  Learn how much you spent on commissions.
         price           => 11,
         commission      => 19,
     });
-    $sa->stockTransaction({ # total proceeds: 670
+    $sa->stockTransaction({ # total revenue: 670
         symbol          => 'AAA',
         dateString      => '20140110T150500Z',
         action          => 'sell',
