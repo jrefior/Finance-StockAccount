@@ -800,14 +800,14 @@ Version 0.01
 
 =head1 SYNOPSIS
 
-Analyze past transactions in a personal stock account.  Find out your profit,
-annual profit, quarterly profit, monthly profit, or profit for any other
-arbitrary date/time range.  Discover what the most cash you had invested in
-stocks at once was, over the course of your account from when it opened to the
-present, or for any period.  Call that your totalOutlays and learn how the
-ratio of profit to that totalOutlays changed from period to period.  Find out
-how much you spent on commissions in a year.  Learn how much you spent on
-commissions.
+Analyze past transactions in a personal stock account.  Find out your total
+profit (how much money you made or lost), annual profit, quarterly profit,
+monthly profit, or profit for any other arbitrary date/time range.  Discover
+what the most cash you had invested in stocks at once was, over the course of
+your account from when it opened to the present, or for any period.  Call that
+your totalOutlays and learn how the ratio of profit to that totalOutlays
+changed from period to period.  Find out how much you spent on commissions in a
+year.  Learn how much you spent on commissions.
 
     use Finance::StockAccount;
 
@@ -908,8 +908,8 @@ commissions.
 My online brokerage account does not allow the user to easily see how her stock
 account is performing.  With a little research, I found this was common
 practice with both online and offline brokerages, as well as financial
-advisers.  So I wrote this software to find out my actual account performance
-and shared it so others could find out theirs.
+advisers.  So I wrote this software to find out my actual account performance,
+and shared these modules so others could find out theirs.
 
 This is a pure stock-transaction based set of modules.  Currently understood
 transaction types include buy, sell, short, and cover.  This version (version
@@ -919,24 +919,17 @@ be based purely on cash -- but rather on appreciation and depreciation of
 stocks, and timing of transactions -- which gives an interesting (and I think
 useful) perspective on account performance.
 
-By default, accounting is done by what I call the Greatest Realized Benefit
-(GRB) method: divestments (sales or covers) are processed from oldest to
-newest, and one or more prior acquisitions (buys or shorts) are matched with
-the sale by availability (meaning not all shares are already tied to another
-divestment) and lowest cost of the acquisition.
-
-Looking at the "Analyze" tools in my OptionsXpress online brokerage account and
+Looking at the "Analyze" tools in my OptionsXpress online brokerage account, I
 saw it always used a "Last In, First Out" accounting method, which, frankly, is
 ridiculous in terms of evaluating my stock trading performance.
 
-Dates are stored as Time::Moment objects, and may be specified either as a
-Time::Moment object (using the 'tm' property) or one of the string formats
-natively understood by Time::Moment (using the 'dateString' property).
-
-If you happen to have an OptionsXpress online brokerage account you can import
-the whole thing in one go with Finance::StockAccount::Import::OptionsXpress.
-(I would like to add more formats, so please donate an export from a brokerage
-account to help this along!)
+So in these modules, accounting is done by what I call the Greatest Realized
+Benefit (GRB) method: divestments (sales and covers) are processed from oldest
+to newest, and one or more prior acquisitions (buys and shorts) are matched
+with the sale by availability (meaning not all acquisition shares are already
+tied to another divestment) and lowest cost of the acquisition.  Future
+releases may add alternative accounting methods that could be selected by the
+user, and I welcome your suggestions for those.
 
 Along the way I tried to create a pure stock transaction class and a pure stock
 class.  If you need such a thing, please look at
@@ -946,15 +939,27 @@ Finance::StockAccount::Stock
 
 which are included in the Finance::StockAccount installation.
 
+If you happen to have an OptionsXpress online brokerage account you can import
+the whole thing in one go with Finance::StockAccount::Import::OptionsXpress.  I
+would like to add more formats, so, if you can, please donate an export from a
+brokerage account to help this along.
+
+Dates are stored as Time::Moment objects, and may be specified either as a
+Time::Moment object (using the 'tm' property) or one of the string formats
+natively understood by Time::Moment (using the 'dateString' property).
+
 =head1 EXPLANATION
 
 This set of modules is intented to give the lay investor (as opposed to the
 high finance wall street type who already has a bunch of expensive tools
 available to him) a meaninful sense of how his or her personal stock account is
 doing.  It turns out a lot of both online and offline brokerages and financial
-advisers and institutions hide that information from their users on the theory
-that if you knew how you were really doing, you would take your money
-elsewhere, or bug them with questions and demands for improvement.
+advisers and institutions obscure that information from their users on the
+theory that if you knew how you were really doing, you would take your money
+elsewhere, or bug them with questions and demands for improvement.  So to get
+the information from them, you have to get the data, make a plan, and do some
+accounting and some math.  It's one more thing on the to-do list so many people
+don't get to it with any frequency.
 
 With these modules you can get a better understanding of the performance of
 your personal stock account.  Here's what you do: Create a new stock account
