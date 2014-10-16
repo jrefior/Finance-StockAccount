@@ -329,12 +329,12 @@ sub calculateStats {
             next unless $set->success();
 
             ### Simple Totals
-            $totalOutlays   += $set->totalOutlays();
-            $totalRevenues  += $set->totalRevenues();
-            $profit         += $set->profit();
-            $commissions    += $set->commissions();
-            $regulatoryFees += $set->regulatoryFees();
-            $otherFees      += $set->otherFees();
+            $totalOutlays       += $set->totalOutlays();
+            $totalRevenues      += $set->totalRevenues();
+            $profit             += $set->profit();
+            $commissions        += $set->commissions();
+            $regulatoryFees     += $set->regulatoryFees();
+            $otherFees          += $set->otherFees();
             $transactionCount   += $set->transactionCount();
 
             ### Date-Aware Totals
@@ -359,9 +359,10 @@ sub calculateStats {
             $setCount++;
         }
         else {
+            my $unfilteredSet = $self->getSet($hashKey);
+            $numberExcluded += $unfilteredSet->unrealizedTransactionCount();
             if ($self->{skipStocks}{$hashKey}) {
-                my $set = $self->getSet($hashKey);
-                $numberExcluded += $set->transactionCount();
+                $numberExcluded += $unfilteredSet->transactionCount();
             }
         }
     }
@@ -866,7 +867,7 @@ year.  Learn how much you spent on commissions.
     # How much profit did you make as a share of the max you invested?
     $sa->profitOverMaxCashInvested(); # 0.17
 
-    # Prefer just profit over outlays?  No problem.  Oh look it happens to be the same in this case
+    # Prefer just profit over outlays?  No problem.  It happens to be the same in this case.
     $sa->profitOverOutlays();         # 0.17
 
     # If you kept up that rate of profit over a year how much would you make?
@@ -934,8 +935,8 @@ user, and I welcome your suggestions for those.
 Along the way I tried to create a pure stock transaction class and a pure stock
 class.  If you need such a thing, please look at
 
-Finance::StockAccount::Transaction
-Finance::StockAccount::Stock
+    Finance::StockAccount::Transaction
+    Finance::StockAccount::Stock
 
 which are included in the Finance::StockAccount installation.
 
@@ -952,14 +953,14 @@ natively understood by Time::Moment (using the 'dateString' property).
 
 This set of modules is intented to give the lay investor (as opposed to the
 high finance wall street type who already has a bunch of expensive tools
-available to him) a meaninful sense of how his or her personal stock account is
-doing.  It turns out a lot of both online and offline brokerages and financial
-advisers and institutions obscure that information from their users on the
-theory that if you knew how you were really doing, you would take your money
-elsewhere, or bug them with questions and demands for improvement.  So to get
-the information from them, you have to get the data, make a plan, and do some
-accounting and some math.  It's one more thing on the to-do list so many people
-don't get to it with any frequency.
+available to him) a meaningful sense of how his or her personal stock account
+is doing.  It turns out a lot of both online and offline brokerages and
+financial advisers and institutions obscure that information from their users
+on the theory that if you knew how you were really doing, you would take your
+money elsewhere, or bug them with questions and demands for improvement.  So to
+get the information from them, you have to get the data, make a plan, and do
+some accounting and some math.  It's one more thing on the to-do list so many
+people don't get to it with any frequency.
 
 With these modules you can get a better understanding of the performance of
 your personal stock account.  Here's what you do: Create a new stock account

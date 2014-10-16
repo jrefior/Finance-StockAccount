@@ -180,6 +180,23 @@ my $print = 1;
     ok($set->setDateLimit($tm1, $tm2), 'Moved the date limit end to before the start of the realization range.');
     is($set->profit(), 0, 'Profit zero where date limit ends before the start of the realization range.');
 }
+{
+    my $init = {
+        symbol          => 'BBB',
+        dateString      => "20130920T182400Z",
+        action          => 'buy',
+        price           => 3.74,
+        quantity        => 200,
+        commission      => 10,
+    };
+    ok(my $at = Finance::StockAccount::AccountTransaction->new($init), 'Created account transaction object.');
+    ok(my $set = Finance::StockAccount::Set->new([$at]), 'Instantiated new Set object.');
+    is($set->stale(), 1, 'Set is stale, as expected.');
+    ok(!$set->accountSales(), 'Account sales returned false, as expected.');
+    is($set->unrealizedTransactionCount(), 1, 'Got expected number of unrealized transactions.');
+}
+
+
 
     
 

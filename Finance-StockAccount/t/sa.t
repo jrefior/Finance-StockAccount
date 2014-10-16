@@ -137,6 +137,69 @@ use_ok('Finance::StockAccount');
     ok($sa->stockTransaction($sell2), 'Added sell2 transaction.');
     is($sa->profit(), 270, 'Got expected total profit.');
 }
+{
+    my $buy = {
+        symbol          => 'CCC',
+        dateString      => '20140521T193800Z',
+        action          => 'buy',
+        quantity        => 100,
+        price           => 40,
+        commission      => 10,
+    };
+    my $sell = {
+        symbol          => 'CCC',
+        dateString      => '20141006T194800Z',
+        action          => 'sell',
+        quantity        => 25,
+        price           => 42,
+        commission      => 10,
+    };
+    ok(my $sa = Finance::StockAccount->new(), 'Created new stock account.');
+    ok($sa->stockTransaction($buy), 'Added buy transaction.');
+    ok($sa->stockTransaction($sell), 'Added partial sell transaction.');
+    is($sa->numberOfTrades(), 2, 'Got expected number of trades.');
+    is($sa->numberExcluded(), 0, 'Got expected number excluded.');
+}
+{
+    my $buy = {
+        symbol          => 'DDD',
+        dateString      => '20140511T193800Z',
+        action          => 'buy',
+        quantity        => 25,
+        price           => 40,
+        commission      => 10,
+    };
+    my $sell = {
+        symbol          => 'DDD',
+        dateString      => '20140916T194800Z',
+        action          => 'sell',
+        quantity        => 100,
+        price           => 42,
+        commission      => 10,
+    };
+    ok(my $sa = Finance::StockAccount->new(), 'Created new stock account.');
+    ok($sa->stockTransaction($buy), 'Added buy transaction.');
+    ok($sa->stockTransaction($sell), 'Added sale of more shares than I bought.');
+    is($sa->numberOfTrades(), 2, 'Got expected number of trades.');
+    is($sa->numberExcluded(), 0, 'Got expected number excluded.');
+}
+{
+    my $buy = {
+        symbol          => 'EEE',
+        dateString      => '20140301T193800Z',
+        action          => 'buy',
+        quantity        => 100,
+        price           => 40,
+        commission      => 10,
+    };
+    ok(my $sa = Finance::StockAccount->new(), 'Created new stock account.');
+    ok($sa->stockTransaction($buy), 'Added buy transaction.');
+    is($sa->numberOfTrades(), 0, 'Got expected number of trades.');
+    is($sa->numberExcluded(), 1, 'Got expected number excluded.');
+}
+
+
+
 
 
 done_testing();
