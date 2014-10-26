@@ -819,8 +819,9 @@ monthly profit, or profit for any other arbitrary date/time range.  Discover
 what the most cash you had invested in stocks at once was, over the course of
 your account from when it opened to the present, or for any period.  Call that
 your totalOutlays and learn how the ratio of profit to that totalOutlays
-changed from period to period.  Find out how much you spent on commissions in a
-year.  Learn how much you spent on commissions.
+changed from period to period.  Find out how much you spent on commissions.
+Match up the results with your experience by looking at profit for each stock
+symbol separately.
 
     use Finance::StockAccount;
 
@@ -986,8 +987,8 @@ or monthly data.
 
 This set of modules deals purely in stock transactions.  There is no concept of
 cash transactions.  Currently there is not even a concept of dividends, though
-I intend to add that.  So far it is purely concerned with acquisitions and
-divestments: their timing, absolute value, and relative value.
+I intend to add that in a future release.  So far it is purely concerned with
+acquisitions and divestments: their timing, absolute value, and relative value.
 
 =head2 Terminology
 
@@ -1034,7 +1035,7 @@ How much cash was received in a divestment, after commissions and fees have been
 Unmatched transactions are not included in statistics: an acquisition that
 cannot be paired with a divestment, or a divestment that cannot be paired with
 an acquisition, is simply left out or ignored.  Here's an example to illustrate
-why this is necessary: Suppose you buy $5,000 worth of stock 'FOO', but you
+why this is necessary: Suppose you bought $5,000 worth of stock 'FOO', but you
 haven't sold it yet.  There is no way to evaluate whether that was a profitable
 choice or not.  It could end up making you a millionaire, or its value could
 drop to $0.
@@ -1056,16 +1057,16 @@ starting at s1 and ending at s2 on this time line:
     |---|----------------------------------------------------|---|
     d1                                                           d2
 
-Trades on d1 and d2 are outside this time line.  So a simple evaluation would
-attribute no value to that realization within this timeline.  But the reality
-is that most of the value of that realization likely accrued during this time.
-It's also a simplification, since I don't look up the stock price for that
-stock every day during tha time, but this module assumes a linear change in
-value and attributes to date range s1 to s2 a value for this realization in
-proportion to the time it overlaps with the range d1 to d2.  So $sa->profit()
-with this date range limit would return the profit for the entire realization
-times (s2-s1)/(d2-d1).  Commissions, outlays, revenues, etc., are all divided
-up the same way.
+Trades on d1 and d2 are outside the date range limit set by s1 and s2.  So a
+simple evaluation would attribute no value to that realization within this
+timeline.  But the reality is that most of the value of that realization likely
+accrued during this time.  It's also a simplification, since I don't look up
+the stock price for that stock every day during tha time, but this module
+assumes a linear change in value and attributes to date range s1 to s2 a value
+for this realization in proportion to the time it overlaps with the range d1 to
+d2.  So $sa->profit() with this date range limit would return the profit
+for the entire realization times (s2-s1)/(d2-d1).  Commissions, outlays,
+revenues, etc., are all divided up the same way.
 
 Perhaps the most practical application for this rule is the periodic look at
 your stock performance.  So when you look at annualStats, quarterlyStats, or
@@ -1283,6 +1284,94 @@ together.
 
     print $sa->summaryByStock();
 
+=head2 stats
+
+Returns a reference to an array of statistics.  The values at zero and every
+odd index is the name of the value stored at the next index.  Here are the
+names and location index of the names:
+
+     0  startDate
+     2  endDate
+     4  maxCashInvested
+     6  totalOutlays
+     8  totalRevenues
+    10  profit
+    12  profitOverYears
+    14  profitOverOutlays
+    16  profitOverMaxCashInvested
+    18  pomciOverYears
+    20  commissions
+    22  regulatoryFees
+    24  otherFees
+    26  numberOfTrades
+    28  numberExcluded
+
+As shown above, there is an $sa->profit() method.  But if you wished to get the
+profit from stats instead, you could.  Perl arrays are zero-indexed, and each
+of the above names is followed by the value, so to get the profit name and
+value:
+
+    my $stats = $sa->stats();
+    my $profitIndex = 20;
+    my $profitName = $stats->[$profitIndex];
+    my $profitValue = $stats->[$profitIndex+1];
+
+Of course all that seems like a lot of work compared to calling $sa->profit().
+But if for some reason you want to grab all the stats in one go in a reference
+and process them somehow, stats is the method for you.
+
+If you are doing much of this work, I suggest looking at the code I've
+implemented in StockAccount.pm for methods stats() and statsString(), which
+might provide you with some useful guides for how to more conveniently access
+and traverse such information.  For example:
+
+    for (my $x=0; $x<scalar(@$statsLinesArray); $x+=3) {
+        my ($name, $key, $valPattern) = @$statsLinesArray[$x .. $x+2];
+        $statsString .= sprintf("%30s $valPattern\n", $name, $stats->{$key});
+    }
+
+You have access to the $statsLinesArray structure through the method of the same name:
+
+    my $statsLinesArray = $sa->statsLinesArray();
+
+In version 0.01, it looked something like this:
+
+    my $statsLinesArray = [
+        'First Trade Date'                  => 'startDate'                  => '%35s',
+        'Last Trade Date'                   => 'endDate'                    => '%35s',
+        'Maximum Cash Invested at Once'     => 'maxCashInvested'            => '%35.2f',
+        'Sum Outlays'                       => 'totalOutlays'               => '%35.2f',
+        'Sum Revenues'                      => 'totalRevenues'              => '%35.2f',
+        'Total Profit'                      => 'profit'                     => '%35.2f',
+        'Profit Over Years'                 => 'profitOverYears'            => '%35.2f',
+        'Profit Over Sum Outlays'           => 'profitOverOutlays'          => '%35.2f',
+        'Profit Over Max Cash Invested'     => 'profitOverMaxCashInvested'  => '%35.2f',
+        'The Above (^) Over Years'          => 'pomciOverYears'             => '%35.2f',
+        'Total Commissions'                 => 'commissions'                => '%35.2f',
+        'Total Regulatory Fees'             => 'regulatoryFees'             => '%35.2f',
+        'Total Other Fees'                  => 'otherFees'                  => '%35.2f',
+        'Num Trades Included in Stats'      => 'numberOfTrades'             => '%35d',
+        'Num Trades Excluded from Stats'    => 'numberExcluded'             => '%35d',
+    ];
+
+But I imagine some of it may change in future versions.
+
+=head2 statsString
+
+Many users will likely just want to print out the stats for display instead of
+looping through the values.  This method loops through them all and creates
+readable formatted text you can print.
+
+    print $sa->statsString();
+
+Note that it's only formatted up to a point.   I did not add a currency
+notation or do much formatting on the numbers.  This is partly because I don't
+know what currency you're using, and partly because there are good modules
+already written to format currency and numbers.  It is a job best left to
+modules designed specifically for those purposes, such as Number::Format, and I
+suggest you grab values using other Finance::StockAccount methods and use such
+modules if you need good currency symbol and number formatting.
+
 =head2 skipStocks
 
 After adding a bunch of transactions, or importing an entire account history,
@@ -1313,6 +1402,38 @@ If there are no skip stocks to return, it will return undef.
 =head2 resetSkipStocks
 
 Use this method to reset the skipStocks list to an empty list.
+
+=head2 statsForPeriod
+
+This method returns a reference to a hash of account statistics for an
+arbitrary date range you provide.  The return value takes the following form:
+
+    {
+        totalOutlays                => $totalOutlays,
+        totalRevenues               => $totalRevenues,
+        maxCashInvested             => $maxCashInvested,
+        profit                      => $profit,
+        profitOverOutlays           => $profit / $totalOutlays,
+        profitOverMaxCashInvested   => $profit / $maxCashInvested,
+        commissions                 => $commissions,
+        regulatoryFees              => $regulatoryFees,
+        otherFees                   => $otherFees,
+        numberOfTrades              => $transactionCount,
+    }
+
+The date range must be provided as two Time::Moment objects:
+
+    my $statsForPeriod = $sa->statsForPeriod($tm1, $tm2);
+
+where $tm2 should represent a time that came after $tm1.  Time::Moment provides
+several methods instantiating new objects with date/time information.  When
+doing so by hand, I find the most convenient one is usually the
+Time::Moment->from_string method:
+
+    # Create a new Time::Moment object for 2:00 PM, January 31, 2014 GMT
+    my $tm1 = Time::Moment->from_string("20140131T140000Z")
+
+Please see Time::Moment's documentation for more information.
 
 =head2 allowZeroPrice
 
