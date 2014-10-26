@@ -8,10 +8,12 @@ use Finance::StockAccount::Import::OptionsXpress;
 
 my $allFile2014 = 'dlAllActivity201409.csv';
 my $printAnnualStats = 0;
-my $printQuarterlyStats = 0;
+my $printQuarterlyStats = 1;
 my $printMonthlyStats = 0;
 my $printStatsString = 0;
-my $printRealizations = 1;
+my $printSets = 0;
+my $printRealizations = 0;
+
 
 {
     ok(my $ox = Finance::StockAccount::Import::OptionsXpress->new($allFile2014, -240), 'Created new OX object for all activity as of September 2014.');
@@ -48,6 +50,9 @@ my $printRealizations = 1;
     }
     if ($printStatsString) {
         print "\n", $statsString;
+    }
+    if ($printSets) {
+        print "\n", $sa->summaryByStock();
     }
     if ($printRealizations) {
         print "\n", $realizationsString;

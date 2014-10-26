@@ -92,6 +92,12 @@ sub stale {
     }
 }
 
+sub symbol {
+    my $self = shift;
+    my $stock = $self->{stock};
+    return $stock->symbol();
+}
+
 sub add {
     my ($self, $accountTransactions) = @_;
     ($accountTransactions and 'ARRAY' eq ref($accountTransactions))
@@ -404,6 +410,22 @@ sub realizationsString {
     }
     return $string;
 }
+
+sub oneLinerSpacer {
+    return '-'x80 . "\n";
+}
+
+sub oneLinerHeader {
+    my $self = shift;
+    return sprintf("%-6s %7s %12s %12s %39s\n", qw(Symbol ROI Outlays Revenues Profit));
+}
+
+sub oneLiner {
+    my $self = shift;
+    return sprintf("%-6s %7.2f %12.2f %12.2f %39.2f\n", $self->symbol(), $self->profitOverOutlays(), $self->totalOutlays(), $self->totalRevenues(), $self->profit());
+}
+
+
 
 
 

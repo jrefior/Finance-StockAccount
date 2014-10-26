@@ -769,9 +769,20 @@ sub totalFees {
     return $self->regulatoryFees() + $self->otherFees();
 }
 
+sub summaryByStock {
+    my $self = shift;
+    my $spacer = Finance::StockAccount::Set->oneLinerSpacer();
+    my $string = $spacer . Finance::StockAccount::Set->oneLinerHeader() . $spacer;
+    my $sets = $self->getFilteredSets();
+    foreach my $set (@$sets) {
+        $string .= $set->oneLiner() . $spacer;
+    }
+    return $string;
+}
+
+
 sub realizationsString {
     my $self = shift;
-    # my $string;
     my $string = Finance::StockAccount::Realization->headerString();
     my $sets = $self->getFilteredSets();
     foreach my $set (@$sets) {
@@ -779,6 +790,7 @@ sub realizationsString {
     }
     return $string;
 }
+
 
 
 
@@ -895,6 +907,9 @@ year.  Learn how much you spent on commissions.
     print $sa->quarterlyStatsString();
     print $sa->monthlyStatsString();
 
+    # Get a simple one-stock-per-line breakdown of how you did
+    print $sa->summaryByStock();
+
     # Need to exclude a couple stocks from analysis?
     $sa->skipStocks(qw(AAA BBB));
 
@@ -1000,6 +1015,10 @@ useful for evaluating stock account performance.  A successful match between a
 divestment and one or more acquisitions is called a "realization" because it
 represents the consummation or realization of the totalOutlays.
 
+=head4 Set
+
+The collection of all realizations for a particular stock.
+
 =head4 Outlay
 
 How much cash was spent on an acquisition transaction, including commissions
@@ -1008,6 +1027,7 @@ and fees.
 =head4 Revenue
 
 How much cash was received in a divestment, after commissions and fees have been subtracted.
+
 
 =head2 Statistics, or "Why does that number look wrong?"
 
@@ -1025,6 +1045,40 @@ the analysis.  You can check that with the numberOfTrades and numberExcluded
 methods (see below).  If you want more granular information, you might consider
 diving down to the Finance::StockAccount::Set level, which provides more tools
 for looking at the accounting of all trades in a specific stock.
+
+Another area that might appear off at first inspection is the periodic stats.
+This module handles date range limitations by figuring out what portion of a
+given realization to attribute to the date range.  Imagine, for example, you
+purchase a stock at d1 and sell it at d2.  Then you set a date range limit
+starting at s1 and ending at s2 on this time line:
+
+        s1                                                   s2
+    |---|----------------------------------------------------|---|
+    d1                                                           d2
+
+Trades on d1 and d2 are outside this time line.  So a simple evaluation would
+attribute no value to that realization within this timeline.  But the reality
+is that most of the value of that realization likely accrued during this time.
+It's also a simplification, since I don't look up the stock price for that
+stock every day during tha time, but this module assumes a linear change in
+value and attributes to date range s1 to s2 a value for this realization in
+proportion to the time it overlaps with the range d1 to d2.  So $sa->profit()
+with this date range limit would return the profit for the entire realization
+times (s2-s1)/(d2-d1).  Commissions, outlays, revenues, etc., are all divided
+up the same way.
+
+Perhaps the most practical application for this rule is the periodic look at
+your stock performance.  So when you look at annualStats, quarterlyStats, or
+monthlyStats, you will see what I would consider more accurate divisions of
+value.  And a month where you did no trades would not necessarily mean a month
+with no stats, as acquisitions would likely be gaining or losing value.
+
+This can have the odd-looking side effect, however, of showing you a number of
+trades considered in the statistics gathering that is larger than the number of
+trades actually made within that date range.  And it means the purported
+"number of trades" for each period adds up to more than the total number of
+trades in the account.  I may try to remove this side effect in a future
+version, so let me know if you find it too problematic or confusing...
 
 =head1 METHODS
 
@@ -1198,20 +1252,38 @@ commission and regulatory fees.
     });
 
 
-head2 profit
+=head2 profit
 
 Returns the numeric total profit (or loss) for all realizations in the stock account.
 
-head2 commissions
+    my $profit = $sa->profit();
+
+=head2 commissions
 
 Returns the numeric total commissions paid on all included transactions.
 
-head2 maxCashInvested
+    my $commissions = $sa->commissions();
+
+=head2 maxCashInvested
 
 Returns the maximum cash value invested in stocks at once.  Uses transaction
 dates and outlays to find this value.
 
-head2 skipStocks
+    my $maxCashInvested = $sa->maxCashInvested();
+
+=head2 summaryByStock
+
+Returns a string showing how you did for each stock.  It begins with a header,
+and then a line for each stock with the following information:
+
+    Symbol ROI Outlays Revenues Profit
+
+with a row of dashes between each line as a visual cue for which values belong
+together.
+
+    print $sa->summaryByStock();
+
+=head2 skipStocks
 
 After adding a bunch of transactions, or importing an entire account history,
 you may wish to exclude certain stocks from calculations, at least temporarily.
@@ -1238,7 +1310,7 @@ with no arguments and it will return an alphabetically sorted list of strings:
 
 If there are no skip stocks to return, it will return undef.
 
-head2 resetSkipStocks
+=head2 resetSkipStocks
 
 Use this method to reset the skipStocks list to an empty list.
 

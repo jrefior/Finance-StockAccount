@@ -77,6 +77,7 @@ my $print = 1;
     ok(my $realizationsString = $set->realizationsString(), 'Got realizations string.');
     if ($print) {
         print $realizationsString;
+        print $set->oneLinerHeader(), $set->oneLiner(), $set->oneLinerSpacer();
     }
 }
 
