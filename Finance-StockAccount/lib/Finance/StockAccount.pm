@@ -922,7 +922,7 @@ symbol separately.
     print $sa->realizationsString();
 
 
-My online brokerage account does not allow the user to easily see how her stock
+My online brokerage account does not allow me to easily see how my stock
 account is performing.  With a little research, I found this was common
 practice with both online and offline brokerages, as well as financial
 advisers.  So I wrote this software to find out my actual account performance,
@@ -1372,37 +1372,6 @@ modules designed specifically for those purposes, such as Number::Format, and I
 suggest you grab values using other Finance::StockAccount methods and use such
 modules if you need good currency symbol and number formatting.
 
-=head2 skipStocks
-
-After adding a bunch of transactions, or importing an entire account history,
-you may wish to exclude certain stocks from calculations, at least temporarily.
-You can do this using the skipStocks method.  Pass it a string list of the
-stock symbols you would like to skip.  If the optional exchange parameter was
-set, you must append the exchange string to the symbol string with a colon.
-For example:
-
-    $sa->skipStocks(qw(AMD TWTR:NYSE));
-    my $profit = $sa->profit();
-    ...
-
-Now any calculations, such as profit, will exclude the stock specified as
-symbol => 'AMD' with no exchange, and the stock specified as symbol => 'TWTR',
-exchange => 'NYSE'.
-
-New calls to the method are additive, so you can add skip stocks one at a time
-or all at once or anywhere in between.
-
-If you'd like to see the current set of skipStocks, you can call the method
-with no arguments and it will return an alphabetically sorted list of strings:
-
-    print join(', ', $sa->skipStocks()), "\n"; # prints "AMD, TWTR:NYSE\n"
-
-If there are no skip stocks to return, it will return undef.
-
-=head2 resetSkipStocks
-
-Use this method to reset the skipStocks list to an empty list.
-
 =head2 statsForPeriod
 
 This method returns a reference to a hash of account statistics for an
@@ -1434,6 +1403,107 @@ Time::Moment->from_string method:
     my $tm1 = Time::Moment->from_string("20140131T140000Z")
 
 Please see Time::Moment's documentation for more information.
+
+=head2 annualStats
+
+This method basically returns a reference to an array of "statsForPeriod" hashes above, one for each year in chronological order.
+
+=head2 annualStatsString
+
+Iterates through annualStats and returns a string of information in columns and
+rows.  It looks something like this:
+
+          Year      Outlays     Revenues  MaxInvested       Profit OverOut OverInvested   Commiss RegFees OthFees NumTrades
+          2012     14454.48     15219.04     15989.18       764.56    0.05         0.05    229.99    0.37    0.00        80
+          2013     59995.61     65866.67     16421.24      5871.07    0.10         0.36    508.56    1.27    0.00       116
+          2014     28838.24     32162.69     12364.62      3324.46    0.12         0.27    237.51    0.75    0.00        73
+    ------------------------------------------------------------------------------------------------------------------------
+    COL SUMS      103288.33    113248.41     44775.05      9960.08    0.27         0.67    976.05    2.38    0.00       269
+    ------------------------------------------------------------------------------------------------------------------------
+    ACCT TOTAL    103288.34    113248.42     15989.18      9960.08    0.10         0.62    976.05    2.38    0.00       130
+
+
+The columns explained further:
+
+- Outlays - acquisition costs, including commissions and fees
+
+- Revenues - divestment gains, reduced by commissions and fees
+
+- Maximum Cash Invested - total acquisition cost at the moment of maximum
+simultaneous unrealized investment. Put another way: the most cash you had
+invested in stocks at once.
+
+- Total Profit - revenues less outlays
+
+- Profit Over Outlays - profit diveded by outlays
+
+- Profit Over Max Cash Invested - profit divided by max cash invested
+
+- Total Commissions
+
+- Total Regulatory Fees
+
+- Total Other Fees
+
+- Num Trades - number of trades examined that contributed to these stats values
+
+In COL SUMS row, the columns are summed (even for columns where that doesn't
+make much sense), and then in the ACCT TOTAL row, total account statistics are
+presented.
+
+Notice how "off" the NumTrades values look when summed compared to the account
+total.  This is because it counts the trades in all realizations that overlap
+the time period, so many trades are counted twice.  See "Why does that number
+look wrong?" above.
+
+=head2 quarterlyStats
+
+Like annualStats but per quarter.  Here a quarter is defined by dividing up
+the year into four three-month periods, starting in January and ending in
+December.
+
+=head2 quarterlyStatsString
+
+Like annualStatsString but for quarter.
+
+=head2 monthlyStats
+
+Like annualStats but per month.
+
+=head2 monthlyStatsString
+
+Like annualStatsString but per month.
+
+=head2 skipStocks
+
+After adding a bunch of transactions, or importing an entire account history,
+you may wish to exclude certain stocks from calculations, at least temporarily.
+You can do this using the skipStocks method.  Pass it a string list of the
+stock symbols you would like to skip.  If the optional exchange parameter was
+set, you must append the exchange string to the symbol string with a colon.
+For example:
+
+    $sa->skipStocks(qw(AMD TWTR:NYSE));
+    my $profit = $sa->profit();
+    ...
+
+Now any calculations, such as profit, will exclude the stock specified as
+symbol => 'AMD' with no exchange, and the stock specified as symbol => 'TWTR',
+exchange => 'NYSE'.
+
+New calls to the method are additive, so you can add skip stocks one at a time
+or all at once or anywhere in between.
+
+If you'd like to see the current set of skipStocks, you can call the method
+with no arguments and it will return an alphabetically sorted list of strings:
+
+    print join(', ', $sa->skipStocks()), "\n"; # prints "AMD, TWTR:NYSE\n"
+
+If there are no skip stocks to return, it will return undef.
+
+=head2 resetSkipStocks
+
+Use this method to reset the skipStocks list to an empty list.
 
 =head2 allowZeroPrice
 
