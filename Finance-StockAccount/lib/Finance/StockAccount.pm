@@ -792,8 +792,6 @@ sub realizationsString {
 }
 
 
-
-
 1;
 
 __END__
@@ -807,21 +805,17 @@ Finance::StockAccount - Analyze past transactions in a personal stock account.
 
 Version 0.01
 
-=cut
-
-
-
 =head1 SYNOPSIS
 
 Analyze past transactions in a personal stock account.  Find out your total
 profit (how much money you made or lost), annual profit, quarterly profit,
 monthly profit, or profit for any other arbitrary date/time range.  Discover
 what the most cash you had invested in stocks at once was, over the course of
-your account from when it opened to the present, or for any period.  Call that
-your totalOutlays and learn how the ratio of profit to that totalOutlays
-changed from period to period.  Find out how much you spent on commissions.
-Match up the results with your experience by looking at profit for each stock
-symbol separately.
+your account from when it opened to the present, or for any period.  Or get the
+total cash you spent on all stock purchases, call that your totalOutlays and
+learn how the ratio of profit to that totalOutlays changed from period to
+period.  Find out how much you spent on commissions.  Match up the results with
+your experience by looking at profit for each stock symbol separately.
 
     use Finance::StockAccount;
 
@@ -833,7 +827,7 @@ symbol separately.
     $sa->stockTransaction({ # total outlay: 1000
         symbol          => 'AAA',
         dateString      => '20140106T150500Z', # This is a Time::Moment string, more on that below
-        action          => 'buy',
+        action          => 'buy',              # in the 'Required: date' section
         quantity        => 198,
         price           => 5,
         commission      => 10,
@@ -1180,6 +1174,12 @@ If using a string passed in with the dateString key, any string acceptable to
 the Time::Moment->from_string method without using the 'lenient' flag will
 work.  Please see the perldoc for Time::Moment for more information.
 
+I chose to use Time::Moment over other Perl time modules because of its
+efficiency in benchmark tests and its ease of use.  It seemed to do everything
+I needed, to do it correctly, and to do it faster than any of the alternatives.
+Please give it a chance, but also please do let me know if you run into any
+problems using it in the context of this module.
+
 B<Required: action>
 
 A value for the 'action' key is required and must be one of the following
@@ -1265,12 +1265,43 @@ Returns the numeric total commissions paid on all included transactions.
 
     my $commissions = $sa->commissions();
 
+=head2 totalCommissions
+
+Same as commissions above.
+
 =head2 maxCashInvested
 
 Returns the maximum cash value invested in stocks at once.  Uses transaction
 dates and outlays to find this value.
 
     my $maxCashInvested = $sa->maxCashInvested();
+
+=head2 profitOverOutlays
+
+    my $profitOverOutlays = $sa->profitOverOutlays();
+
+Returns the ratio of profit to outlays.  In other words, the profit divided by
+the outlays.
+
+=head2 profitOverYears
+
+    my $profitOverYears = $sa->profitOverYears();
+
+Returns the ratio of profit to years.  So if you took the seconds between the
+first transaction date and the last transaction date, and divided by the number
+of seconds in a year to get time t, this returns profit divited by time t.
+
+=head2 regulatoryFees
+
+    my $regulatoryFees = $sa->regulatoryFees();
+
+Returns the total of all regulatory fees paid in all transactions.
+
+=head2 otherFees
+
+    my $otherFees = $sa->otherFees();
+
+Returns the total of all other fees paid in all transactions.
 
 =head2 summaryByStock
 
@@ -1474,6 +1505,70 @@ Like annualStats but per month.
 
 Like annualStatsString but per month.
 
+=head2 getSet
+
+    my $set = $sa->getSet($hashKey);
+
+Returns the Finance::StockAccount::Set object specified by $hashkey, or undef
+if not found.
+
+If you want to get into the details of the accounting for a particular set,
+accessing the set is the way to go.  You can retrieve the set using a hashkey
+made up of the stock symbol and exchange in the form:
+
+    symbol:exchange
+
+So for example, if I added stock transactions for Apple stock using the symbol
+AAPL and the exchange NASDAQ, my hashkey would be
+
+    AAPL:NASDAQ
+
+The set can be returned with the getSet method passing in the hashkey as a
+string:
+
+    my $appleSet = $sa->getSet('AAPL:NASDAQ');
+
+If you didn't set an exchange, which is optional for stock objects, just use
+the symbol:
+
+    my $appleSet = $sa->getSet('AAPL');
+
+That will give you a Finance::StockAccount::Set object.
+Finance::StockAccount::Set is installed with the Finance::StockAccount module.
+To learn more about sets, run
+
+    perldoc Finance::StockAccount::Set
+
+from the command line.
+
+=head2 getSetFiltered
+
+    my $set = $sa->getSetFiltered($hashkey);
+
+Same as getSet except it filters out all sets that are ruled out by skipStocks
+(see skipStocks method below) or for which there are no realizations -- no pairings of
+acquisition and divestment.  Returns undef if no set is found matching the
+hashkey, containing realizations, and not on the skipStocks list.
+
+=head2 getFilteredSets
+
+    my $sets = $sa->getFilteredSets();
+
+Returns a reference to the array of all sets in the account that match the
+getSetFiltered criteria above.
+
+=head2 realizationsString
+
+    print $sa->realizationsString();
+
+If you want to get even further down into the weeds than
+Finance::StockAccount::Set objects, you can look at
+Finance::StockAccount::Realization objects.  Sets are made up of them, so you
+can access them through the Set object.  But for a quick overview/printout, you
+can use this method to retrive a string showing each realization.  The method
+loops through each set, and each realization within the set, retrieving a
+string for each one that is combined into the return value.
+
 =head2 skipStocks
 
 After adding a bunch of transactions, or importing an entire account history,
@@ -1606,8 +1701,3 @@ YOUR LOCAL LAW. UNLESS REQUIRED BY LAW, NO COPYRIGHT HOLDER OR
 CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, OR
 CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF THE USE OF THE PACKAGE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-=cut
-
-1; # End of Finance::StockAccount

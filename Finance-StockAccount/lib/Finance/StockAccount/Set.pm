@@ -8,6 +8,7 @@ use Carp;
 
 use Finance::StockAccount::Realization;
 
+our $VERSION = '0.01';
 
 sub new {
     my ($class, $init) = @_;
@@ -426,9 +427,181 @@ sub oneLiner {
 }
 
 
-
-
-
-
-
 1;
+
+
+__END__
+
+=head1 NAME
+
+Finance::StockAccount::Set - a one-stock building block used by Finance::StockAccount
+
+=head1 VERSION
+
+Version 0.01
+
+=head1 SYNOPSIS
+
+Finance::StockAccount::Set objects are the building blocks of a
+Finance::StockAccount object.  Each Set is the complete record of transactions
+and accounting for a particular stock. Sets are also collections of
+Realizations.  See perldoc Finance::StockAccount for context. 
+
+Typical usage of sets involves adding Finance::StockAccount::Transaction
+objects to them, analyzing them with the accountSales method, and then
+retriving stats from them:
+
+    my $at = Finance::StockAccount::AccountTransaction->new($init);
+    my $set = Finance::StockAccount::Set->new([$at]);
+    $set->accountSales();
+    my $profit = $set->profit();
+
+=head1 METHODS
+
+=head2 realizations
+
+    my $realizations = $set->realizations();
+
+Returns a reference to an array of all realizations in the set.  Like the other
+methods concerning realizations below, this is only meaningful after
+$set->accountSales() has been run.
+
+=head2 realizationCount
+
+    my $realizationCount = $set->realizationCount();
+
+Answers the question: how many realizations are in the set?
+
+=head2 transactionCount
+
+    my $transactionCount = $set->transactionCount();
+
+How many realized transactions are in the set?
+
+=head2 unrealizedTransactionCount
+
+    my $unrealizedTransactionCount = $set->unrealizedTransactionCount();
+
+How many unrealized transactions are in the set?
+
+=head2 realizedTransactions
+
+    my $realizedTransactions = $set->realizedTransactions();
+
+Returns a reference to the array of all realized transactions in the set.
+
+=head2 unrealizedTransactions
+
+    my $unrealizedTransactions = $set->unrealizedTransactions();
+
+Returns a reference to the array of all unrealized transactions in the set.
+
+=head2 stale
+
+    $set->stale() and $set->accountSales();
+
+Returns true if the Set object has changed in a significant way since the last
+accountSales() call, false otherwise.  If called with a parameter, can also be
+used to set the staleness status of the set.
+
+=head2 symbol
+
+    my $symbol = $set->symbol();
+
+Get the set stock symbol.
+
+=head2 startDate
+
+    $set->startDate($tm); # $tm is a Time::Moment object
+
+Set a start date for a date range limit.  If no argument is passed, retrieves the start date:
+
+    my $tm = $set->startDate();
+
+=head2 endDate
+
+Same as startDate, but gets/sets the end of the period.
+
+=head1 AUTHOR
+
+John Everett Refior, C<< <jrefior at gmail.com> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to C<bug-finance-stockaccount at rt.cpan.org>, or through
+the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Finance-StockAccount>.  I will be notified, and then you'll
+automatically be notified of progress on your bug as I make changes.
+
+=head1 SUPPORT
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc Finance::StockAccount::Set
+
+You can also look for information at:
+
+=over 4
+
+=item * RT: CPAN's request tracker (report bugs here)
+
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Finance-StockAccount>
+
+=item * AnnoCPAN: Annotated CPAN documentation
+
+L<http://annocpan.org/dist/Finance-StockAccount>
+
+=item * CPAN Ratings
+
+L<http://cpanratings.perl.org/d/Finance-StockAccount>
+
+=item * Search CPAN
+
+L<http://search.cpan.org/dist/Finance-StockAccount/>
+
+=back
+
+=head1 ACKNOWLEDGEMENTS
+
+I would like to thank the Perl Monks for contributing their wisdom when I
+posted questions about how to handle date/time and whether there was already a
+module capable of doing what I planned.
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2014 John Everett Refior.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of the the Artistic License (2.0). You may obtain a
+copy of the full license at:
+
+L<http://www.perlfoundation.org/artistic_license_2_0>
+
+Any use, modification, and distribution of the Standard or Modified
+Versions is governed by this Artistic License. By using, modifying or
+distributing the Package, you accept this license. Do not use, modify,
+or distribute the Package, if you do not accept this license.
+
+If your Modified Version has been derived from a Modified Version made
+by someone other than you, you are nevertheless required to ensure that
+your Modified Version complies with the requirements of this license.
+
+This license does not grant you the right to use any trademark, service
+mark, tradename, or logo of the Copyright Holder.
+
+This license includes the non-exclusive, worldwide, free-of-charge
+patent license to make, have made, use, offer to sell, sell, import and
+otherwise transfer the Package with respect to any patent claims
+licensable by the Copyright Holder that are necessarily infringed by the
+Package. If you institute patent litigation (including a cross-claim or
+counterclaim) against any party alleging that the Package constitutes
+direct or contributory patent infringement, then this Artistic License
+to you shall terminate on the date that such litigation is filed.
+
+Disclaimer of Warranty: THE PACKAGE IS PROVIDED BY THE COPYRIGHT HOLDER
+AND CONTRIBUTORS "AS IS' AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
+THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE, OR NON-INFRINGEMENT ARE DISCLAIMED TO THE EXTENT PERMITTED BY
+YOUR LOCAL LAW. UNLESS REQUIRED BY LAW, NO COPYRIGHT HOLDER OR
+CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, OR
+CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF THE USE OF THE PACKAGE,
+EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
