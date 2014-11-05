@@ -808,14 +808,14 @@ Version 0.01
 =head1 SYNOPSIS
 
 Analyze past transactions in a personal stock account.  Find out your total
-profit (how much money you made or lost), annual profit, quarterly profit,
-monthly profit, or profit for any other arbitrary date/time range.  Discover
-what the most cash you had invested in stocks at once was, over the course of
-your account from when it opened to the present, or for any period.  Or get the
-total cash you spent on all stock purchases, call that your totalOutlays and
-learn how the ratio of profit to that totalOutlays changed from period to
-period.  Find out how much you spent on commissions.  Match up the results with
-your experience by looking at profit for each stock symbol separately.
+profit, annual profit, quarterly profit, monthly profit, or profit for any
+other arbitrary date/time range.  Discover what the most cash you had invested
+in stocks at once was, over the course of your account from when it opened to
+the present, or for any period.  Or get the total cash you spent on all stock
+purchases, call that your totalOutlays and learn how the ratio of profit to
+that totalOutlays changed from period to period.  Find out how much you spent
+on commissions.  Match up the results with your experience by looking at profit
+for each stock symbol separately.
 
     use Finance::StockAccount;
 
@@ -961,7 +961,7 @@ natively understood by Time::Moment (using the 'dateString' property).
 
 =head1 EXPLANATION
 
-This set of modules is intented to give the lay investor (as opposed to the
+This set of modules is intended to give the lay investor (as opposed to the
 high finance wall street type who already has a bunch of expensive tools
 available to him) a meaningful sense of how his or her personal stock account
 is doing.  It turns out a lot of both online and offline brokerages and
@@ -1146,8 +1146,8 @@ kept separate in StockAccount accounting.
 B<Required: date>
 
 Second, there must be a date for the transaction.  Dates are necessary for
-matching a sale to is prior purchase, or for calculating the mean annual profit
-(or loss), for example.  Finance::StockAccount uses the CPAN module
+matching a sale to its prior purchase, or for calculating the mean annual
+profit (or loss), for example.  Finance::StockAccount uses the CPAN module
 Time::Moment to handle dates.  A date can either be passed in as a string using
 the dateString key:
 

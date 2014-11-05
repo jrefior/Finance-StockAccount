@@ -522,6 +522,38 @@ Set a start date for a date range limit.  If no argument is passed, retrieves th
 
 Same as startDate, but gets/sets the end of the period.
 
+=head2 setDateLimit
+
+    $set->setDateLimit($tm1, $tm2);
+
+Same as:
+
+    $set->startDate($tm1);
+    $set->endDate($tm2);
+
+=head2 clearDateLimit
+
+    $set->clearDateLimit();
+
+Remove date range restrictions -- established by startDate, endDate, or setDateLimit methods -- from the set.
+
+=head2 transactionDates
+
+    my $transactionDates = $set->transactionDates();
+
+Returns a reference on a array of the Time::Moment objects for every transaction in the set.
+
+=head2 printTransactionDates
+
+    $set->printTransactionDates();
+
+Actually prints to STDOUT the dates returned by the transactionDates method.
+
+=head2 accountSales
+
+    $set->stale() and $set->accountSales();
+
+
 =head1 AUTHOR
 
 John Everett Refior, C<< <jrefior at gmail.com> >>
