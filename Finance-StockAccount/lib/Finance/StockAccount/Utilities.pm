@@ -1,5 +1,7 @@
 package StockAccount::Transaction::Utilities;
 
+our $VERSION = '0.01';
+
 use parent 'StockAccount::Transaction';
 
 use Number::Format;

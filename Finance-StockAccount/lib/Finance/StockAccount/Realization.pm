@@ -1,5 +1,7 @@
 package Finance::StockAccount::Realization;
 
+our $VERSION = '0.01';
+
 use strict;
 use warnings;
 

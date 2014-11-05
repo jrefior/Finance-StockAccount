@@ -1,5 +1,6 @@
-# see pod at end of file for documentation
 package Finance::StockAccount;
+
+our $VERSION = '0.01';
 
 use strict;
 use warnings;
@@ -11,7 +12,6 @@ use Finance::StockAccount::Set;
 use Finance::StockAccount::AccountTransaction;
 use Finance::StockAccount::Stock;
 
-our $VERSION = '0.01';
 
 
 ### Class definition

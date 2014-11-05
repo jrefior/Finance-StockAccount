@@ -1,5 +1,7 @@
 package Finance::StockAccount::Set;
 
+our $VERSION = '0.01';
+
 use strict;
 use warnings;
 
@@ -8,7 +10,6 @@ use Carp;
 
 use Finance::StockAccount::Realization;
 
-our $VERSION = '0.01';
 
 sub new {
     my ($class, $init) = @_;

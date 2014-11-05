@@ -1,5 +1,7 @@
 package Finance::StockAccount::Import;
 
+our $VERSION = '0.01';
+
 use strict;
 use warnings;
 

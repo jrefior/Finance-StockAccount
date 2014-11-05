@@ -1,9 +1,12 @@
 package Finance::StockAccount::AccountTransaction;
 
+our $VERSION = '0.01';
+
 use parent 'Finance::StockAccount::Transaction';
 
 use strict;
 use warnings;
+
 
 sub new {
     my ($class, $init) = @_;

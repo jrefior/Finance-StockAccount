@@ -1,5 +1,7 @@
 package Finance::StockAccount::Transaction;
 
+our $VERSION = '0.01';
+
 use Time::Moment;
 
 use Finance::StockAccount::Stock;
