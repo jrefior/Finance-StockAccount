@@ -406,7 +406,7 @@ sub realizations {
 sub realizationsString {
     my $self = shift;
     my $string;
-    foreach my $realization (@{$self->{realizations}}) {
+    foreach my $realization (@{$self->realizations()}) {
         $string .= '='x94 . "\n" . $realization->string() . "\n";
     }
     return $string;
@@ -504,6 +504,9 @@ Returns true if the Set object has changed in a significant way since the last
 accountSales() call, false otherwise.  If called with a parameter, can also be
 used to set the staleness status of the set.
 
+Typical ways a Set will change that affect staleness include the addition of
+new stock transactions and the setting or removal of a date range limit.
+
 =head2 symbol
 
     my $symbol = $set->symbol();
@@ -553,6 +556,64 @@ Actually prints to STDOUT the dates returned by the transactionDates method.
 
     $set->stale() and $set->accountSales();
 
+Calling account sales triggers the primary work of the Set module: it matches
+up each divestment with a prior acquisition, and then uses that matching to
+populate all the statistics properties of the object, and it sets the stale
+property to false.  This is why most methods that return statistics will call
+accountSales if stats are stale.
+
+=head2 checkStats
+
+    $set->checkStats();
+
+Runs accountSales if the stats data is stale, i.e., if the object has changed
+in a significant way since it last ran.
+
+=head2 profit
+
+    my $profit = $set->profit();
+
+Runs checkStats and then returns the profit for the set.
+
+=head2 commissions
+
+Runs checkStats and then returns the total commissions.
+
+=head2 totalOutlays
+
+Runs checkStats and then returns the outlays, what was spent on acquisitions including overhead (commissions and fees).
+
+=head2 totalRevenues
+
+Runs checkSTats and then returns the revenues, less overhead.
+
+=head2 profitOverOutlays
+
+Runs checkStats and then returns the profit divided by the outlays.
+
+=head2 regulatoryFees
+
+Runs checkStats and then returns the regulatory fees.
+
+=head2 otherFees
+
+Runs checkStats and then returns the total other fees paid.
+
+=head2 success
+
+Runs checkStats and then returns a boolean value for whether any acquisitions
+were successfully paired with a divesment.  Can be used to determine whether
+there are any meaningful relationship upon which stats can be based.
+
+=head2 realizations
+
+Runs checkStats and then returns a reference to the list of Realization objects
+created.
+
+=head2 realizationsString
+
+Loops through the list returned by $set->realizations() and returns a string
+that can be printed to view it.
 
 =head1 AUTHOR
 

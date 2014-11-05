@@ -7,12 +7,12 @@ use Finance::StockAccount::Import::OptionsXpress;
 
 
 my $allFile2014 = 'dlAllActivity201409.csv';
-my $printAnnualStats = 1;
+my $printAnnualStats = 0;
 my $printQuarterlyStats = 0;
 my $printMonthlyStats = 0;
 my $printStatsString = 0;
 my $printSets = 0;
-my $printRealizations = 0;
+my $printRealizations = 1;
 
 
 {
