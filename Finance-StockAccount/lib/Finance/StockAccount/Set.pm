@@ -91,10 +91,17 @@ sub availableAcquisitions {
 
 sub availableAcquisitionsString {
     my $self = shift;
-    my $aa = $self->availableAcquisitions();
-    my $string = Finance::StockAccount::Transaction->lineFormatHeader();
+    my $aa   = $self->availableAcquisitions();
+    my $string;
+    my $header = Finance::StockAccount::Transaction->lineFormatHeader();
     foreach my $at (@$aa) {
         $string .= $at->lineFormatString(1);
+    }
+    if ($string) {
+        $string = $header . $string;
+    }
+    else {
+        $string = '';
     }
     return $string;
 }
