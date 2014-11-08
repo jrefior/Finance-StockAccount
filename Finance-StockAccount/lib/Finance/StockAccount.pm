@@ -441,6 +441,24 @@ sub statsString {
     return $statsString;
 }
 
+sub availableAcquisitionsString {
+    my ($self, $inputKey) = @_;
+    my ($string, @hashKeys);
+    if ($inputKey) {
+        @hashKeys = ($inputKey);
+    }
+    else {
+        @hashKeys = keys %{$self->{sets}};
+    }
+    foreach my $hashKey (@hashKeys) {
+        my $set = $self->getSet($hashKey);
+        if ($set) {
+            $string .= $set->availableAcquisitionsString();
+        }
+    }
+    return $string;
+}
+
 sub statsForPeriod {
     my ($self, $tm1, $tm2) = @_;
     my ($totalOutlays, $totalRevenues, $profit, $commissions, $regulatoryFees, $otherFees, $transactionCount) = (0, 0, 0, 0, 0, 0, 0);
@@ -1568,6 +1586,19 @@ can access them through the Set object.  But for a quick overview/printout, you
 can use this method to retrive a string showing each realization.  The method
 loops through each set, and each realization within the set, retrieving a
 string for each one that is combined into the return value.
+
+=head2 availableAcquisitionsString
+
+    print $sa->availableAcquisitionsString('WFM');
+
+Returns the string showing all acquisitions not yet paired with a divestment,
+which one could use to evaluate cost basis for a potential sale or cover.  With
+$hashKey passed in, it will be limited to the Set object matching $hashKey (a
+string in the form '<symbol>:<exchange>', e.g. 'TWTR:NYSE', or just '<symbol>',
+e.g. 'TWTR', if no exchange was specified on the stock).
+
+With no arguments, loops through all sets and aggregates the data into one
+string.
 
 =head2 skipStocks
 

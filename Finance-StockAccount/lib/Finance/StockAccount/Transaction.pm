@@ -15,6 +15,8 @@ use constant SHORT      => 2;
 use constant COVER      => 3;
 
 my $lineFormatPattern = "%-35s %-6s %-6s %8s %7.2f %10.2f %5.2f %10.2f\n";
+my $headerPattern = "%-35s %-6s %-6s %8s %7s %10s %5s %10s\n";
+my @headerNames = qw(Date Symbol Action Quantity Price Commission Fees CashEffect);
 
 sub new {
     my ($class, $init) = @_;
@@ -391,7 +393,7 @@ sub string {
 }
 
 sub lineFormatHeader {
-    return sprintf("%-35s %-6s %-6s %8s %7s %10s %5s %10s\n", qw(Date Symbol Action Quantity Price Commission Fees CashEffect));
+    return sprintf($headerPattern, @headerNames);
 }
 
 sub lineFormatPattern {

@@ -78,15 +78,15 @@ sub hashKey {
 }
 
 sub lineFormatValues {
-    my $self = shift;
+    my ($self, $available) = @_;
     my $lineFormatValues = $self->SUPER::lineFormatValues();
-    $lineFormatValues->[3] = $self->{accounted};
+    $lineFormatValues->[3] = $available ? $self->available : $self->{accounted};
     return $lineFormatValues;
 }
 
 sub lineFormatString {
-    my $self = shift;
-    return sprintf(Finance::StockAccount::Transaction->lineFormatPattern(), @{$self->lineFormatValues()});
+    my ($self, $available) = @_;
+    return sprintf(Finance::StockAccount::Transaction->lineFormatPattern(), @{$self->lineFormatValues($available)});
 }
 
 

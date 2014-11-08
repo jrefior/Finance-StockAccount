@@ -78,6 +78,27 @@ sub unrealizedTransactionCount {
     return $count;
 }
 
+sub availableAcquisitions {
+    my $self = shift;
+    my @aa;
+    foreach my $at (@{$self->{accountTransactions}}) {
+        if ($at->available() and ($at->buy() or $at->short())) {
+            push(@aa, $at);
+        }
+    }
+    return \@aa;
+}
+
+sub availableAcquisitionsString {
+    my $self = shift;
+    my $aa = $self->availableAcquisitions();
+    my $string = Finance::StockAccount::Transaction->lineFormatHeader();
+    foreach my $at (@$aa) {
+        $string .= $at->lineFormatString(1);
+    }
+    return $string;
+}
+
 sub stale {
     my ($self, $assertion) = @_;
     if (defined($assertion)) {
@@ -496,6 +517,30 @@ Returns a reference to the array of all realized transactions in the set.
     my $unrealizedTransactions = $set->unrealizedTransactions();
 
 Returns a reference to the array of all unrealized transactions in the set.
+
+=head2 availableAcquisitions
+
+    my $aa = $set->availableAcquisitions();
+
+Returns a reference to the array of AccountTransaction objects in the set for
+which $at->available() and ($at->buy() or $at->short()) is true.  Meaning they
+are acquisitions available for potential match with divestments.  This is
+particularly useful to the user/trader when she wants to see what purchases (or
+shorts) are available for sale (or cover) at the current price, and judge what
+profit might be made from divestment and what quantity to divest.
+
+=head2 availableAcquisitionsString
+
+    print $set->availableAcquisitionsString();
+
+Returns a formatted string of the above information.  Note that in version 0.01
+of this module, the only column adjusted from the Transaction object to the
+AccountTransaction object for this printing is the "Quantity" column, which
+shows the number of shares available.  This was a bit of a shortcut, and I
+might come back and fix it later, as an acquisition that has been partially
+matched with a divestment already would show the commission and most
+importantly the cash effect of the entire transaction, not just the available
+shares, which can be misleading.
 
 =head2 stale
 
