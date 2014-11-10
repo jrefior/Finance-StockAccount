@@ -2,6 +2,9 @@ use 5.006;
 use strict;
 use warnings FATAL => 'all';
 use ExtUtils::MakeMaker;
+use File::ShareDir::Install;
+
+install_share module => 'Finance::StockAccount', t/
 
 WriteMakefile(
     NAME             => 'Finance::StockAccount',

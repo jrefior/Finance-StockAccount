@@ -1307,7 +1307,7 @@ the outlays.
 
 Returns the ratio of profit to years.  So if you took the seconds between the
 first transaction date and the last transaction date, and divided by the number
-of seconds in a year to get time t, this returns profit divited by time t.
+of seconds in a year to get time t, this returns profit divided by time t.
 
 =head2 regulatoryFees
 
@@ -1355,10 +1355,10 @@ names and location index of the names:
     26  numberOfTrades
     28  numberExcluded
 
-As shown above, there is an $sa->profit() method.  But if you wished to get the
-profit from stats instead, you could.  Perl arrays are zero-indexed, and each
-of the above names is followed by the value, so to get the profit name and
-value:
+where "pomci" is short for "Profit Over Max Cash Invested".  As shown above,
+there is an $sa->profit() method. But if you wished to get the profit from
+stats instead, you could.  Perl arrays are zero-indexed, and each of the above
+names is followed by the value, so to get the profit name and value:
 
     my $stats = $sa->stats();
     my $profitIndex = 20;
@@ -1403,7 +1403,8 @@ In version 0.01, it looked something like this:
         'Num Trades Excluded from Stats'    => 'numberExcluded'             => '%35d',
     ];
 
-But I imagine some of it may change in future versions.
+I imagine this
+structure may change in future versions.
 
 =head2 statsString
 
@@ -1484,7 +1485,7 @@ invested in stocks at once.
 
 - Total Profit - revenues less outlays
 
-- Profit Over Outlays - profit diveded by outlays
+- Profit Over Outlays - profit divided by outlays
 
 - Profit Over Max Cash Invested - profit divided by max cash invested
 
@@ -1583,7 +1584,7 @@ If you want to get even further down into the weeds than
 Finance::StockAccount::Set objects, you can look at
 Finance::StockAccount::Realization objects.  Sets are made up of them, so you
 can access them through the Set object.  But for a quick overview/printout, you
-can use this method to retrive a string showing each realization.  The method
+can use this method to retrieve a string showing each realization.  The method
 loops through each set, and each realization within the set, retrieving a
 string for each one that is combined into the return value.
 
@@ -1606,7 +1607,7 @@ After adding a bunch of transactions, or importing an entire account history,
 you may wish to exclude certain stocks from calculations, at least temporarily.
 You can do this using the skipStocks method.  Pass it a string list of the
 stock symbols you would like to skip.  If the optional exchange parameter was
-set, you must append the exchange string to the symbol string with a colon.
+set, you must join the exchange string to the symbol string with a colon.
 For example:
 
     $sa->skipStocks(qw(AMD TWTR:NYSE));
@@ -1641,7 +1642,7 @@ can set the allowZeroPrice option on the StockAccount object to do that:
     $sa->allowZeroPrice(1); # allow transactions with price == 0
     $sa->allowZeroPrice(0); # disallow transactions with price == 0
 
-or or check the value with the same method and no arguments:
+or check the value with the same method and no arguments:
 
     if ($sa->allowZeroPrice()) {
         ... do something ...
