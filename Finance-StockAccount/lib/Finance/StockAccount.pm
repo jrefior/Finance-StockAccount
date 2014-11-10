@@ -1070,15 +1070,15 @@ starting at s1 and ending at s2 on this time line:
     d1                                                           d2
 
 Trades on d1 and d2 are outside the date range limit set by s1 and s2.  So a
-simple evaluation would attribute no value to that realization within this
-timeline.  But the reality is that most of the value of that realization likely
+simple evaluation would attribute no value to that realization within this time
+line.  But the reality is that most of the value of that realization likely
 accrued during this time.  It's also a simplification, since I don't look up
-the stock price for that stock every day during tha time, but this module
+the stock price for that stock every day during that time, but this module
 assumes a linear change in value and attributes to date range s1 to s2 a value
 for this realization in proportion to the time it overlaps with the range d1 to
-d2.  So $sa->profit() with this date range limit would return the profit
-for the entire realization times (s2-s1)/(d2-d1).  Commissions, outlays,
-revenues, etc., are all divided up the same way.
+d2.  So $sa->profit() with this date range limit would return the profit for
+the entire realization times (s2-s1)/(d2-d1).  Commissions, outlays, revenues,
+etc., are all divided up the same way.
 
 Perhaps the most practical application for this rule is the periodic look at
 your stock performance.  So when you look at annualStats, quarterlyStats, or
@@ -1528,21 +1528,21 @@ Like annualStatsString but per month.
 
     my $set = $sa->getSet($hashKey);
 
-Returns the Finance::StockAccount::Set object specified by $hashkey, or undef
+Returns the Finance::StockAccount::Set object specified by $hashKey, or undef
 if not found.
 
 If you want to get into the details of the accounting for a particular set,
-accessing the set is the way to go.  You can retrieve the set using a hashkey
+accessing the set is the way to go.  You can retrieve the set using a hashKey
 made up of the stock symbol and exchange in the form:
 
     symbol:exchange
 
 So for example, if I added stock transactions for Apple stock using the symbol
-AAPL and the exchange NASDAQ, my hashkey would be
+AAPL and the exchange NASDAQ, my hashKey would be
 
     AAPL:NASDAQ
 
-The set can be returned with the getSet method passing in the hashkey as a
+The set can be returned with the getSet method passing in the hashKey as a
 string:
 
     my $appleSet = $sa->getSet('AAPL:NASDAQ');
@@ -1562,12 +1562,12 @@ from the command line.
 
 =head2 getSetFiltered
 
-    my $set = $sa->getSetFiltered($hashkey);
+    my $set = $sa->getSetFiltered($hashKey);
 
 Same as getSet except it filters out all sets that are ruled out by skipStocks
 (see skipStocks method below) or for which there are no realizations -- no pairings of
 acquisition and divestment.  Returns undef if no set is found matching the
-hashkey, containing realizations, and not on the skipStocks list.
+hashKey, containing realizations, and not on the skipStocks list.
 
 =head2 getFilteredSets
 
