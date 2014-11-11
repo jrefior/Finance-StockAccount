@@ -2,14 +2,28 @@ use strict;
 use warnings;
 
 use Test::More;
+use File::ShareDir qw(module_file);
+
+sub getFile {
+    my $name = shift;
+    my $file;
+    my $local = File::Spec->catfile('data', $name);
+    if (-e $local) {
+        $file = $local;
+    }
+    else {
+        $file = File::ShareDir::module_file($name);
+    }
+    return $file;
+}
 
 use_ok('Finance::StockAccount::Import::OptionsXpress');
 
-my $aaplFile    = 'dlAppleActivity.csv';
-my $esiFile     = 'dlEsiActivity.csv';
-my $eaFile      = 'dlEaActivity.csv';
-my $aepFile     = 'dlAepActivity.csv';
-my $amdFile     = 'dlAmdActivity.csv';
+my $aaplFile    = getFile('dlAppleActivity.csv');
+my $esiFile     = getFile('dlEsiActivity.csv');
+my $eaFile      = getFile('dlEaActivity.csv');
+my $aepFile     = getFile('dlAepActivity.csv');
+my $amdFile     = getFile('dlAmdActivity.csv');
 
 {
     my $ox = Finance::StockAccount::Import::OptionsXpress->new($aaplFile, -240);

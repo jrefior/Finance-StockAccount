@@ -4,7 +4,7 @@ use warnings FATAL => 'all';
 use ExtUtils::MakeMaker;
 use File::ShareDir::Install;
 
-install_share module => 'Finance::StockAccount', t/
+install_share module => 'Finance::StockAccount', 't/data';
 
 WriteMakefile(
     NAME             => 'Finance::StockAccount',
@@ -27,3 +27,6 @@ WriteMakefile(
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'Finance-StockAccount-*' },
 );
+
+package MY;
+use File::ShareDir::Install 'postamble';

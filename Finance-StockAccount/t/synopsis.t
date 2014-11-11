@@ -1,6 +1,22 @@
 use strict;
 use warnings;
+
 use Test::More;
+use File::Spec;
+use File::ShareDir qw(module_file);
+
+sub getFile {
+    my $name = shift;
+    my $file;
+    my $local = File::Spec->catfile('data', $name);
+    if (-e $local) {
+        $file = $local;
+    }
+    else {
+        $file = File::ShareDir::module_file($name);
+    }
+    return $file;
+}
 
 
 {
@@ -71,8 +87,9 @@ use Test::More;
     # and then import that.  Only works for OptionsXpress so far, more to come.
 
     use Finance::StockAccount::Import::OptionsXpress;
+    my $file = getFile('dlAmdActivity.csv');
 
-    my $ox = Finance::StockAccount::Import::OptionsXpress->new('dlAmdActivity.csv');
+    my $ox = Finance::StockAccount::Import::OptionsXpress->new($file);
     my $sa = $ox->stockAccount();
     my $profit = $sa->profit();     # 2803.63
 

@@ -2,11 +2,24 @@ use strict;
 use warnings;
 
 use Test::More;
+use File::ShareDir qw(module_file);
 
 use Finance::StockAccount::Import::OptionsXpress;
 
+sub getFile {
+    my $name = shift;
+    my $file;
+    my $local = File::Spec->catfile('data', $name);
+    if (-e $local) {
+        $file = $local;
+    }
+    else {
+        $file = File::ShareDir::module_file($name);
+    }
+    return $file;
+}
 
-my $allFile2014 = 'dlAllActivity201409.csv';
+my $allFile2014 = getFile('dlAllActivity201409.csv');
 my $printAnnualStats = 0;
 my $printQuarterlyStats = 0;
 my $printMonthlyStats = 0;
