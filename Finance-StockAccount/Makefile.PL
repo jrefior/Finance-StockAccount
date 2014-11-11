@@ -4,7 +4,7 @@ use warnings FATAL => 'all';
 use ExtUtils::MakeMaker;
 use File::ShareDir::Install;
 
-install_share module => 'Finance::StockAccount', 't/data';
+install_share dist => 't/data';
 
 WriteMakefile(
     NAME             => 'Finance::StockAccount',
@@ -16,9 +16,12 @@ WriteMakefile(
     MIN_PERL_VERSION => 5.006,
     CONFIGURE_REQUIRES => {
         'ExtUtils::MakeMaker' => 0,
+        'File::ShareDir::Install' => 0,
     },
     BUILD_REQUIRES => {
         'Test::More' => 0,
+        'File::Spec' => 0,
+        'File::ShareDir' => 0,
     },
     PREREQ_PM => {
         'Time::Moment'              => 0.07,

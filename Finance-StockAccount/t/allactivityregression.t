@@ -2,7 +2,8 @@ use strict;
 use warnings;
 
 use Test::More;
-use File::ShareDir qw(module_file);
+use File::Spec;
+use File::ShareDir qw(dist_file);
 
 use Finance::StockAccount::Import::OptionsXpress;
 
@@ -14,7 +15,7 @@ sub getFile {
         $file = $local;
     }
     else {
-        $file = File::ShareDir::module_file($name);
+        $file = dist_file('Finance-StockAccount', $name);
     }
     return $file;
 }
