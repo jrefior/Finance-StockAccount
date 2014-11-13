@@ -6,7 +6,6 @@ lib/Finance/StockAccount/Realization.pm
 lib/Finance/StockAccount/Set.pm
 lib/Finance/StockAccount/Stock.pm
 lib/Finance/StockAccount/Transaction.pm
-lib/Finance/StockAccount/Utilities.pm
 lib/Finance/StockAccount/Import/OptionsXpress.pm
 t/00-load.t
 t/manifest.t
