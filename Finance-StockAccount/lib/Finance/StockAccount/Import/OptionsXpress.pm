@@ -2,13 +2,8 @@ package Finance::StockAccount::Import::OptionsXpress;
 
 our $VERSION = '0.01';
 
-use Exporter 'import';
-@EXPORT_OK = qw(new);
-
 use Time::Moment;
-
 use parent 'Finance::StockAccount::Import';
-
 
 #### Expected Fields, tab separated:
 # Symbol, Description, Action, Quantity, Price, Commission, Reg Fees, Date, TransactionID, Order Number, Transaction Type ID, Total Cost 
