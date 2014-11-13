@@ -9,7 +9,6 @@ lib/Finance/StockAccount/Transaction.pm
 lib/Finance/StockAccount/Import/OptionsXpress.pm
 t/00-load.t
 t/manifest.t
-t/pod-coverage.t
 t/pod.t
 t/runtests
 t/accounttransaction.t
