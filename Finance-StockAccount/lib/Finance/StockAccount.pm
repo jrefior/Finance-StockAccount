@@ -1650,6 +1650,55 @@ or check the value with the same method and no arguments:
 
 As mentioned above, it can also be set using the new method, described above.
 
+=head1 INSTALLATION
+
+A classic and still great means of installing a Perl module is basically as
+follows.  Download the tarball, extract it somewhere, and then in that
+directory run these commands:
+
+    perl Makefile.PL
+    make
+    make test
+    make install
+
+Of course there are lots of options and alternatives.  For example, say you
+were on unix or linux and you created a "plib" directory in your home directory
+and configured Perl to look there, and you wanted to install there instead.
+You could change that first line to do that:
+
+    perl Makefile.PL INSTALL_BASE=~/plib
+
+And there are lots of other things you can do.  I recommend looking at
+
+    perldoc ExtUtils::MakeMaker
+
+(or just view it on cpan or metacpan) for more information.
+
+Also, there are several tools for installing Perl modules, such as cpanm.  Many
+of them will install dependencies for you.  I did not test my distribution with
+all such tools, so please let me know if you have problems installing this
+module with any of them.
+
+This is by no means meant as an authoritative guide for how to install Perl
+modules: there is a lot of good material on that subject online and in perldoc
+pages, so please look for those sources.
+
+=head1 MORE EXAMPLES
+
+If you download this module as a tarball from cpan or metacpan and extract it
+somewhere, you should see a
+
+    t/
+
+directory.  In there are tests written for this module, providing more examples
+of code that makes use of this module.  Note that much of this code was written
+specifically to test features and methods of this module, and may not represent
+typical or ideal usage.  Note that several of these tests require the files in
+
+    t/data/
+
+to work.
+
 =head1 AUTHOR
 
 John Everett Refior, C<< <jrefior at gmail.com> >>
@@ -1726,7 +1775,7 @@ direct or contributory patent infringement, then this Artistic License
 to you shall terminate on the date that such litigation is filed.
 
 Disclaimer of Warranty: THE PACKAGE IS PROVIDED BY THE COPYRIGHT HOLDER
-AND CONTRIBUTORS "AS IS' AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
+AND CONTRIBUTORS "AS IS" AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
 PURPOSE, OR NON-INFRINGEMENT ARE DISCLAIMED TO THE EXTENT PERMITTED BY
 YOUR LOCAL LAW. UNLESS REQUIRED BY LAW, NO COPYRIGHT HOLDER OR
