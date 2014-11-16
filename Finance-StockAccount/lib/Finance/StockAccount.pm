@@ -980,7 +980,7 @@ natively understood by Time::Moment (using the 'dateString' property).
 =head1 EXPLANATION
 
 This set of modules is intended to give the lay investor (as opposed to the
-high finance wall street type who already has a bunch of expensive tools
+high finance Wall Street type who already has a bunch of expensive tools
 available to him) a meaningful sense of how his or her personal stock account
 is doing.  It turns out a lot of both online and offline brokerages and
 financial advisers and institutions obscure that information from their users
@@ -1247,9 +1247,9 @@ B<Optional: regulatoryFees>
 
 In the United States the Securities and Exchange Commission imposes regulatory
 fees on stock brokers or dealers.  Instead of paying these with their profits,
-these for-profit companies often pass these fees onto their customers directly.
-The C<regulatoryFees> property could be used for similar purposes in other
-jurisdictions.
+these for-profit companies often pass these fees on to their customers
+directly.  The C<regulatoryFees> property could be used for similar purposes in
+other jurisdictions.
 
 See http://www.sec.gov/answers/sec31.htm for more information.
 
@@ -1335,9 +1335,9 @@ together.
 
 =head2 stats
 
-Returns a reference to an array of statistics.  The values at zero and every
-odd index is the name of the value stored at the next index.  Here are the
-names and location index of the names:
+Returns a reference to an array of statistics.  Every other position, starting
+with zero, contains the name of the value stored at the next position.  Here is
+each name prefixed by its location index:
 
      0  startDate
      2  endDate
@@ -1361,7 +1361,7 @@ stats instead, you could.  Perl arrays are zero-indexed, and each of the above
 names is followed by the value, so to get the profit name and value:
 
     my $stats = $sa->stats();
-    my $profitIndex = 20;
+    my $profitIndex = 10;
     my $profitName = $stats->[$profitIndex];
     my $profitValue = $stats->[$profitIndex+1];
 
