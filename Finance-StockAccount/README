@@ -170,7 +170,7 @@ SYNOPSIS
 EXPLANATION
 
     This set of modules is intended to give the lay investor (as opposed to
-    the high finance wall street type who already has a bunch of expensive
+    the high finance Wall Street type who already has a bunch of expensive
     tools available to him) a meaningful sense of how his or her personal
     stock account is doing. It turns out a lot of both online and offline
     brokerages and financial advisers and institutions obscure that
@@ -445,9 +445,9 @@ METHODS
 
     In the United States the Securities and Exchange Commission imposes
     regulatory fees on stock brokers or dealers. Instead of paying these
-    with their profits, these for-profit companies often pass these fees
-    onto their customers directly. The regulatoryFees property could be
-    used for similar purposes in other jurisdictions.
+    with their profits, these for-profit companies often pass these fees on
+    to their customers directly. The regulatoryFees property could be used
+    for similar purposes in other jurisdictions.
 
     See http://www.sec.gov/answers/sec31.htm for more information.
 
@@ -535,9 +535,9 @@ METHODS
 
  stats
 
-    Returns a reference to an array of statistics. The values at zero and
-    every odd index is the name of the value stored at the next index. Here
-    are the names and location index of the names:
+    Returns a reference to an array of statistics. Every other position,
+    starting with zero, contains the name of the value stored at the next
+    position. Here is each name prefixed by its location index:
 
          0  startDate
          2  endDate
@@ -562,7 +562,7 @@ METHODS
     name and value:
 
         my $stats = $sa->stats();
-        my $profitIndex = 20;
+        my $profitIndex = 10;
         my $profitName = $stats->[$profitIndex];
         my $profitValue = $stats->[$profitIndex+1];
 
@@ -862,6 +862,56 @@ METHODS
     As mentioned above, it can also be set using the new method, described
     above.
 
+INSTALLATION
+
+    A classic and still great means of installing a Perl module is
+    basically as follows. Download the tarball, extract it somewhere, and
+    then in that directory run these commands:
+
+        perl Makefile.PL
+        make
+        make test
+        make install
+
+    Of course there are lots of options and alternatives. For example, say
+    you were on unix or linux and you created a "plib" directory in your
+    home directory and configured Perl to look there, and you wanted to
+    install there instead. You could change that first line to do that:
+
+        perl Makefile.PL INSTALL_BASE=~/plib
+
+    And there are lots of other things you can do. I recommend looking at
+
+        perldoc ExtUtils::MakeMaker
+
+    (or just view it on cpan or metacpan) for more information.
+
+    Also, there are several tools for installing Perl modules, such as
+    cpanm. Many of them will install dependencies for you. I did not test
+    my distribution with all such tools, so please let me know if you have
+    problems installing this module with any of them.
+
+    This is by no means meant as an authoritative guide for how to install
+    Perl modules: there is a lot of good material on that subject online
+    and in perldoc pages, so please look for those sources.
+
+MORE EXAMPLES
+
+    If you download this module as a tarball from cpan or metacpan and
+    extract it somewhere, you should see a
+
+        t/
+
+    directory. In there are tests written for this module, providing more
+    examples of code that makes use of this module. Note that much of this
+    code was written specifically to test features and methods of this
+    module, and may not represent typical or ideal usage. Note that several
+    of these tests require the files in
+
+        t/data/
+
+    to work.
+
 AUTHOR
 
     John Everett Refior, <jrefior at gmail.com>
@@ -937,7 +987,7 @@ LICENSE AND COPYRIGHT
     litigation is filed.
 
     Disclaimer of Warranty: THE PACKAGE IS PROVIDED BY THE COPYRIGHT HOLDER
-    AND CONTRIBUTORS "AS IS' AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
+    AND CONTRIBUTORS "AS IS" AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
     THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
     PURPOSE, OR NON-INFRINGEMENT ARE DISCLAIMED TO THE EXTENT PERMITTED BY
     YOUR LOCAL LAW. UNLESS REQUIRED BY LAW, NO COPYRIGHT HOLDER OR
