@@ -197,6 +197,64 @@ use_ok('Finance::StockAccount');
     is($sa->numberOfTrades(), 0, 'Got expected number of trades.');
     is($sa->numberExcluded(), 1, 'Got expected number excluded.');
 }
+{
+    my $b1 = {
+        symbol          => 'GGG',
+        dateString      => '20140101T183800Z',
+        action          => 'buy',
+        quantity        => 500,
+        price           => 10,
+        commission      => 10,
+    };
+    my $b2 = {
+        symbol          => 'GGG',
+        dateString      => '20140401T183800Z',
+        action          => 'buy',
+        quantity        => 200,
+        price           => 9,
+        commission      => 10,
+    };
+    my $b3 = {
+        symbol          => 'GGG',
+        dateString      => '20140411T183800Z',
+        action          => 'buy',
+        quantity        => 100,
+        price           => 8,
+        commission      => 10,
+    };
+    my $s1 = {
+        symbol          => 'GGG',
+        dateString      => '20140416T183800Z',
+        action          => 'sell',
+        quantity        => 250,
+        price           => 9.25,
+        commission      => 10,
+    };
+    my $s2 = {
+        symbol          => 'GGG',
+        dateString      => '20140421T183800Z',
+        action          => 'sell',
+        quantity        => 550,
+        price           => 10.1,
+        commission      => 10,
+    };
+    ok(my $sa = Finance::StockAccount->new(), 'Created new stock account.');
+    ok($sa->stockTransaction($b1), 'Added buy transaction 1.');
+    ok($sa->stockTransaction($b2), 'Added buy transaction 2.');
+    ok($sa->stockTransaction($b3), 'Added buy transaction 3.');
+    ok($sa->stockTransaction($s1), 'Added sell transaction 1.');
+    ok($sa->stockTransaction($s2), 'Added sell transaction 2.');
+    my $stats = $sa->quarterlyStats();
+    my $nt1 = $stats->[0]{numberOfTrades};
+    my $nt2 = $stats->[1]{numberOfTrades};
+    is($nt1, 1, 'Got expected number of trades for first quarter.');
+    my $qss = $sa->quarterlyStatsString();
+    print $qss;
+}
+
+
+
+
 
 
 

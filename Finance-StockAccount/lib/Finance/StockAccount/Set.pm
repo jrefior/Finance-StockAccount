@@ -21,6 +21,7 @@ sub new {
         dateLimit           => {
             start               => undef,
             end                 => undef,
+            transactionCount    => 0,
         },
         verbose             => 0,
     };
@@ -172,8 +173,9 @@ sub setDateLimit {
         croak "The start date must come before the end date.";
     }
     my $dateLimit = $self->{dateLimit};
-    $dateLimit->{start} = $tm1;
-    $dateLimit->{end}   = $tm2;
+    $dateLimit->{start}             = $tm1;
+    $dateLimit->{end}               = $tm2;
+    $dateLimit->{transactionCount}  = 0;
     $self->{stats}{stale} = 1;
     return 1;
 }
@@ -181,8 +183,9 @@ sub setDateLimit {
 sub clearDateLimit {
     my $self = shift;
     my $dateLimit = $self->{dateLimit};
-    $dateLimit->{start} = undef;
-    $dateLimit->{end}   = undef;
+    $dateLimit->{start}             = undef;
+    $dateLimit->{end}               = undef;
+    $dateLimit->{transactionCount}  = 0;
     $self->{stats}{stale} = 1;
     return 1;
 }
@@ -313,6 +316,10 @@ sub accountSales {
     if (!$self->{dateSort}) {
         $self->dateSort();
     }
+    my $dateLimit = $self->{dateLimit};
+    my $limitStart = $dateLimit->{start};
+    my $limitEnd = $dateLimit->{end};
+    my $countTransactions = ($limitStart && $limitEnd) ? 1 : 0;
     my $accountTransactions = $self->{accountTransactions};
     my $status = 0;
     for (my $x=0; $x<scalar(@$accountTransactions); $x++) {
@@ -320,6 +327,12 @@ sub accountSales {
         if ($at->sell() or $at->short()) {
             if ($at->available()) {
                 $status += $self->accountPriorPurchase($x);
+            }
+        }
+        if ($countTransactions) {
+            my $tm = $at->tm();
+            if ($tm >= $limitStart and $tm <= $limitEnd) {
+                $dateLimit->{transactionCount}++;
             }
         }
     }
@@ -454,6 +467,13 @@ sub oneLiner {
     my $self = shift;
     return sprintf("%-6s %7.2f %12.2f %12.2f %39.2f\n", $self->symbol(), $self->profitOverOutlays(), $self->totalOutlays(), $self->totalRevenues(), $self->profit());
 }
+
+sub dateLimitTransactionCount {
+    my $self = shift;
+    $self->checkStats();
+    return $self->{dateLimit}{transactionCount};
+}
+
 
 
 1;

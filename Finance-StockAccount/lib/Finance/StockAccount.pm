@@ -476,7 +476,7 @@ sub statsForPeriod {
             $commissions        += $set->commissions();
             $regulatoryFees     += $set->regulatoryFees();
             $otherFees          += $set->otherFees();
-            $transactionCount   += $set->transactionCount();
+            $transactionCount   += $set->dateLimitTransactionCount();
             push(@allRealizations, @{$set->realizations()});
         }
         $unfilteredSet->clearDateLimit();
