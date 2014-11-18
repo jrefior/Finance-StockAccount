@@ -21,7 +21,6 @@ sub new {
         dateLimit           => {
             start               => undef,
             end                 => undef,
-            transactionCount    => 0,
         },
         verbose             => 0,
     };
@@ -173,9 +172,8 @@ sub setDateLimit {
         croak "The start date must come before the end date.";
     }
     my $dateLimit = $self->{dateLimit};
-    $dateLimit->{start}             = $tm1;
-    $dateLimit->{end}               = $tm2;
-    $dateLimit->{transactionCount}  = 0;
+    $dateLimit->{start} = $tm1;
+    $dateLimit->{end}   = $tm2;
     $self->{stats}{stale} = 1;
     return 1;
 }
@@ -183,9 +181,8 @@ sub setDateLimit {
 sub clearDateLimit {
     my $self = shift;
     my $dateLimit = $self->{dateLimit};
-    $dateLimit->{start}             = undef;
-    $dateLimit->{end}               = undef;
-    $dateLimit->{transactionCount}  = 0;
+    $dateLimit->{start} = undef;
+    $dateLimit->{end}   = undef;
     $self->{stats}{stale} = 1;
     return 1;
 }
@@ -316,10 +313,6 @@ sub accountSales {
     if (!$self->{dateSort}) {
         $self->dateSort();
     }
-    my $dateLimit = $self->{dateLimit};
-    my $limitStart = $dateLimit->{start};
-    my $limitEnd = $dateLimit->{end};
-    my $countTransactions = ($limitStart && $limitEnd) ? 1 : 0;
     my $accountTransactions = $self->{accountTransactions};
     my $status = 0;
     for (my $x=0; $x<scalar(@$accountTransactions); $x++) {
@@ -327,12 +320,6 @@ sub accountSales {
         if ($at->sell() or $at->short()) {
             if ($at->available()) {
                 $status += $self->accountPriorPurchase($x);
-            }
-        }
-        if ($countTransactions) {
-            my $tm = $at->tm();
-            if ($tm >= $limitStart and $tm <= $limitEnd) {
-                $dateLimit->{transactionCount}++;
             }
         }
     }
@@ -471,7 +458,27 @@ sub oneLiner {
 sub dateLimitTransactionCount {
     my $self = shift;
     $self->checkStats();
-    return $self->{dateLimit}{transactionCount};
+    my $dateLimit = $self->{dateLimit};
+    my $limitStart = $dateLimit->{start};
+    my $limitEnd = $dateLimit->{end};
+    my $dateCheck = ($limitStart && $limitEnd) ? 1 : 0;
+    my $accountTransactions = $self->{accountTransactions};
+    my $count = 0;
+    for (my $x=0; $x<scalar(@$accountTransactions); $x++) {
+        my $at = $accountTransactions->[$x];
+        if ($at->accounted()) {
+            if ($dateCheck) {
+                my $tm = $at->tm();
+                if ($tm >= $limitStart and $tm <= $limitEnd) {
+                    $count++;
+                }
+            }
+            else {
+                $count++;
+            }
+        }
+    }
+    return $count;
 }
 
 

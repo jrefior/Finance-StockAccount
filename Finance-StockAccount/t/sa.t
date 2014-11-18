@@ -222,6 +222,14 @@ use_ok('Finance::StockAccount');
         price           => 8,
         commission      => 10,
     };
+    my $b4 = {
+        symbol          => 'GGG',
+        dateString      => '20140412T183800Z',
+        action          => 'buy',
+        quantity        => 50,
+        price           => 11,
+        commission      => 10,
+    };
     my $s1 = {
         symbol          => 'GGG',
         dateString      => '20140416T183800Z',
@@ -242,12 +250,14 @@ use_ok('Finance::StockAccount');
     ok($sa->stockTransaction($b1), 'Added buy transaction 1.');
     ok($sa->stockTransaction($b2), 'Added buy transaction 2.');
     ok($sa->stockTransaction($b3), 'Added buy transaction 3.');
+    ok($sa->stockTransaction($b4), 'Added buy transaction 4.');
     ok($sa->stockTransaction($s1), 'Added sell transaction 1.');
     ok($sa->stockTransaction($s2), 'Added sell transaction 2.');
     my $stats = $sa->quarterlyStats();
     my $nt1 = $stats->[0]{numberOfTrades};
     my $nt2 = $stats->[1]{numberOfTrades};
     is($nt1, 1, 'Got expected number of trades for first quarter.');
+    is($nt2, 4, 'Got expected number of trades for second quarter.');
     my $qss = $sa->quarterlyStatsString();
     print $qss;
 }
