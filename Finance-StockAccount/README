@@ -7,6 +7,24 @@ VERSION
 
     Version 0.01
 
+BASIC
+
+    This is a Perl module. The canonical location of this module where
+    developer-tested versions are released is the Comprehensive Perl
+    Archive Network (CPAN):
+
+    http://search.cpan.org/dist/Finance-StockAccount/lib/Finance/StockAccou
+    nt.pm
+
+    It can also be found, followed, commented on, and contributed to on
+    GitHub:
+
+    https://github.com/jrefior/Finance-StockAccount
+
+    You can also find me on Twitter:
+
+    http://twitter.com/jrefior
+
 SYNOPSIS
 
     Analyze past transactions in a personal stock account. Find out your
