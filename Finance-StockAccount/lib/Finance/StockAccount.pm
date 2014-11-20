@@ -823,6 +823,22 @@ Finance::StockAccount - Analyze past transactions in a personal stock account.
 
 Version 0.01
 
+=head1 BASIC
+
+This is a Perl module.  The canonical location of this module where
+developer-tested versions are released is the Comprehensive Perl Archive
+Network (CPAN):
+
+L<http://search.cpan.org/dist/Finance-StockAccount/lib/Finance/StockAccount.pm>
+
+It can also be found, followed, commented on, and contributed to on GitHub:
+
+L<https://github.com/jrefior/Finance-StockAccount>
+
+You can also find me on Twitter:
+
+L<http://twitter.com/jrefior>
+
 =head1 SYNOPSIS
 
 Analyze past transactions in a personal stock account.  Find out your total
