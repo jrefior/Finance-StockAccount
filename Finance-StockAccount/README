@@ -301,14 +301,6 @@ EXPLANATION
     would not necessarily mean a month with no stats, as acquisitions would
     likely be gaining or losing value.
 
-    This can have the odd-looking side effect, however, of showing you a
-    number of trades considered in the statistics gathering that is larger
-    than the number of trades actually made within that date range. And it
-    means the purported "number of trades" for each period adds up to more
-    than the total number of trades in the account. I may try to remove
-    this side effect in a future version, so let me know if you find it too
-    problematic or confusing...
-
 METHODS
 
  new
@@ -688,11 +680,11 @@ METHODS
     columns and rows. It looks something like this:
 
               Year      Outlays     Revenues  MaxInvested       Profit OverOut OverInvested   Commiss RegFees OthFees NumTrades
-              2012     14454.48     15219.04     15989.18       764.56    0.05         0.05    229.99    0.37    0.00        80
-              2013     59995.61     65866.67     16421.24      5871.07    0.10         0.36    508.56    1.27    0.00       116
-              2014     28838.24     32162.69     12364.62      3324.46    0.12         0.27    237.51    0.75    0.00        73
+              2012     14454.48     15219.04     15989.18       764.56    0.05         0.05    229.99    0.37    0.00        28
+              2013     59995.61     65866.67     16421.24      5871.07    0.10         0.36    508.56    1.27    0.00        73
+              2014     28838.24     32162.69     12364.62      3324.46    0.12         0.27    237.51    0.75    0.00        29
         ------------------------------------------------------------------------------------------------------------------------
-        COL SUMS      103288.33    113248.41     44775.05      9960.08    0.27         0.67    976.05    2.38    0.00       269
+        COL SUMS      103288.33    113248.41     44775.05      9960.08    0.27         0.67    976.05    2.38    0.00       130
         ------------------------------------------------------------------------------------------------------------------------
         ACCT TOTAL    103288.34    113248.42     15989.18      9960.08    0.10         0.62    976.05    2.38    0.00       130
 
@@ -718,17 +710,11 @@ METHODS
 
     - Total Other Fees
 
-    - Num Trades - number of trades examined that contributed to these
-    stats values
+    - Num Trades - number of trades executed within the period
 
     In COL SUMS row, the columns are summed (even for columns where that
     doesn't make much sense), and then in the ACCT TOTAL row, total account
     statistics are presented.
-
-    Notice how "off" the NumTrades values look when summed compared to the
-    account total. This is because it counts the trades in all realizations
-    that overlap the time period, so many trades are counted twice. See
-    "Why does that number look wrong?" above.
 
  quarterlyStats
 
