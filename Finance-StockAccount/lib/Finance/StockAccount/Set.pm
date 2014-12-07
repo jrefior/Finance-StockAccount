@@ -41,6 +41,8 @@ sub getNewStatsHash {
         otherFees                   => 0,
         maxCashInvested             => 0,
         minCashRequired             => 0,
+        numRealized                 => 0,
+        numUnrealized               => 0,
         startDate                   => undef,
         endDate                     => undef,
         unrealizedTransactionCount  => 0,
@@ -312,11 +314,12 @@ sub accountPriorPurchase {
 sub accountSales {
     my $self = shift;
     $self->clearPastAccounting();
+    my $stats = $self->{stats};
     if (!$self->{dateSort}) {
         $self->dateSort();
     }
     my $accountTransactions = $self->{accountTransactions};
-    my ($status, $total, $max, $minCashRequired) = (0, 0, 0, 0);
+    my ($status, $total, $max) = (0, 0, 0);
     for (my $x=0; $x<scalar(@$accountTransactions); $x++) {
         my $at = $accountTransactions->[$x];
         $total += 0 - $at->cashEffect();
@@ -327,7 +330,23 @@ sub accountSales {
             }
         }
     }
-    $self->{stats}{maxCashInvested} = $max;
+    $stats->{maxCashInvested} = $max;
+    my ($min, $accounted, $unaccounted) = (0, 0, 0);
+    for (my $x=0; $x<scalar(@$accountTransactions); $x++) {
+        my $at = $accountTransactions->[$x];
+        if ($at->accounted()) {
+            $accounted++;
+            if ($at->buy() or $at->short()) {
+                $min += 0 - $at->cashEffect();
+            }
+        }
+        else {
+            $unaccounted++;
+        }
+    }
+    $stats->{minCashRequired}   = $min;
+    $stats->{numRealized}       = $accounted;
+    $stats->{numUnrealized}     = $unaccounted;
     $self->stale(0);
     return $status;
 }
@@ -431,6 +450,12 @@ sub maxCashInvested {
     return $self->{stats}{maxCashInvested};
 }
 
+sub minCashRequired {
+    my $self = shift;
+    $self->checkStats();
+    return $self->{stats}{minCashRequired};
+}
+
 sub success {
     my $self = shift;
     $self->checkStats();
@@ -450,6 +475,18 @@ sub realizationsString {
         $string .= '='x94 . "\n" . $realization->string() . "\n";
     }
     return $string;
+}
+
+sub numRealized {
+    my $self = shift;
+    $self->checkStats();
+    return $self->{stats}{numRealized};
+}
+
+sub numUnrealized {
+    my $self = shift;
+    $self->checkStats();
+    return $self->{stats}{numUnrealized};
 }
 
 sub oneLinerSpacer {
