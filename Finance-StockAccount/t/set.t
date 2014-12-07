@@ -68,6 +68,7 @@ my $print = 1;
     is($set->unrealizedTransactionCount(), 1, 'Got expected count of unrealized transactions.');
     is($set->totalOutlays(), 3673, 'Cost (totalOutlays) as expected.');
     is($set->totalRevenues(), 4040, 'Benefit (revenue) as expected.');
+    is($set->maxCashInvested(), 3673, 'Got expected Max Cash Invested.');
     is($set->profit(), 367, 'Profit as expected.');
     ok($set->profitOverOutlays() =~ /^0\.0999/, 'Profit over outlays as expected.');
     ok($set->startDate() == $tm1, 'Got expected start date.');

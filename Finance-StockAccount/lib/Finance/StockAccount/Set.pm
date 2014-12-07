@@ -39,6 +39,8 @@ sub getNewStatsHash {
         commissions                 => 0,
         regulatoryFees              => 0,
         otherFees                   => 0,
+        maxCashInvested             => 0,
+        minCashRequired             => 0,
         startDate                   => undef,
         endDate                     => undef,
         unrealizedTransactionCount  => 0,
@@ -314,15 +316,18 @@ sub accountSales {
         $self->dateSort();
     }
     my $accountTransactions = $self->{accountTransactions};
-    my $status = 0;
+    my ($status, $total, $max, $minCashRequired) = (0, 0, 0, 0);
     for (my $x=0; $x<scalar(@$accountTransactions); $x++) {
         my $at = $accountTransactions->[$x];
+        $total += 0 - $at->cashEffect();
+        $total > $max and $max = $total;
         if ($at->sell() or $at->short()) {
             if ($at->available()) {
                 $status += $self->accountPriorPurchase($x);
             }
         }
     }
+    $self->{stats}{maxCashInvested} = $max;
     $self->stale(0);
     return $status;
 }
@@ -418,6 +423,12 @@ sub otherFees {
     my $self = shift;
     $self->checkStats();
     return $self->{stats}{otherFees};
+}
+
+sub maxCashInvested {
+    my $self = shift;
+    $self->checkStats();
+    return $self->{stats}{maxCashInvested};
 }
 
 sub success {
