@@ -36,13 +36,16 @@ sub getNewStatsHash {
         startDate                   => undef,
         endDate                     => undef,
         maxCashInvested             => 0,
+        minCashRequired             => 0,
         totalOutlays                => 0,
         totalRevenues               => 0,
         profit                      => 0,
+        profitOverYears             => 0,
         profitOverOutlays           => 0,
         profitOverMaxCashInvested   => 0,
-        profitOverYears             => 0,
         pomciOverYears              => 0,
+        profitOverMinCashRequired   => 0,
+        pomcrOverYears              => 0,
         commissions                 => 0,
         regulatoryFees              => 0,
         otherFees                   => 0,
@@ -61,28 +64,31 @@ sub getNewStatsHash {
 
 ### For convenience text output
 my $statsKeyHeadings = [qw(
-    Outlays Revenues MaxInvested Profit OverOut
-    OverInvested Commiss RegFees OthFees NumTrades
+    Outlays Revenues MaxInvested MinRequired Profit OverOut
+    OverInvested Commiss RegFees OthFees     NumTrades
 )];
-my $statsKeyHeadingsPattern = "%12s %12s %12s %12s %7s %12s %9s %7s %7s %9s";
+my $statsKeyHeadingsPattern = "%12s %12s %12s %12s %12s %7s %12s %9s %7s %7s %9s";
 
 my $statsKeys = [qw(
-    totalOutlays              totalRevenues maxCashInvested profit    profitOverOutlays
-    profitOverMaxCashInvested commissions   regulatoryFees  otherFees numberOfTrades
+    totalOutlays              totalRevenues maxCashInvested minCashRequired profit    profitOverOutlays
+    profitOverMaxCashInvested commissions   regulatoryFees  otherFees       numberOfTrades
 )];
-my $statsKeysPattern = "%12.2f %12.2f %12.2f %12.2f %7.2f %12.2f %9.2f %7.2f %7.2f %9d";
+my $statsKeysPattern = "%12.2f %12.2f %12.2f %12.2f %12.2f %7.2f %12.2f %9.2f %7.2f %7.2f %9d";
 
 my $statsLinesArray = [
         'First Trade Date'                  => 'startDate'                  => '%35s',
         'Last Trade Date'                   => 'endDate'                    => '%35s',
-        'Maximum Cash Invested at Once'     => 'maxCashInvested'            => '%35.2f',
+        'Max Cash Invested at Once'         => 'maxCashInvested'            => '%35.2f',
+        'Min Cash Required for Profit'      => 'minCashRequired'            => '%35.2f',
         'Sum Outlays'                       => 'totalOutlays'               => '%35.2f',
         'Sum Revenues'                      => 'totalRevenues'              => '%35.2f',
         'Total Profit'                      => 'profit'                     => '%35.2f',
         'Profit Over Years'                 => 'profitOverYears'            => '%35.2f',
         'Profit Over Sum Outlays'           => 'profitOverOutlays'          => '%35.2f',
         'Profit Over Max Cash Invested'     => 'profitOverMaxCashInvested'  => '%35.2f',
-        'The Above (^) Over Years'          => 'pomciOverYears'             => '%35.2f',
+        'Profit Over Max Cash Per Year'     => 'pomciOverYears'             => '%35.2f',
+        'Profit Over Min Cash Required'     => 'profitOverMinCashRequired'  => '%35.2f',
+        'Profit Over Min Cash Per Year'     => 'pomcrOverYears'             => '%35.2f',
         'Total Commissions'                 => 'commissions'                => '%35.2f',
         'Total Regulatory Fees'             => 'regulatoryFees'             => '%35.2f',
         'Total Other Fees'                  => 'otherFees'                  => '%35.2f',
@@ -1056,6 +1062,23 @@ and fees.
 =head4 Revenue
 
 How much cash was received in a divestment, after commissions and fees have been subtracted.
+
+=head4 maxCashInvested
+
+This is a method and statistics field name in this module.  It is time-aware.
+It essentially steps through your trades chronologically, tracking the sum cost
+of all current acquisitions.  A divestment will decrease that sum.  The maximum
+value reached will be recorded in this stats field and returned by this method.
+It essentially means the most cash you had invested in stock (including shorts
+of stock) at any one time.
+
+=head4 minCashRequired
+
+This is very similar to maxCashInvested, except it excludes any unrealized
+transactions from its calculation.  It essentially tells you how much
+investment was needed to make your current profit, and ignores transactions
+that you have not yet realized into profit or loss.  Its long name would be
+"Minimum cash investment required to reach current profit."
 
 
 =head2 Statistics, or "Why does that number look wrong?"

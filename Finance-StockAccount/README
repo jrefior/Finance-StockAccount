@@ -13,8 +13,7 @@ BASIC
     developer-tested versions are released is the Comprehensive Perl
     Archive Network (CPAN):
 
-    http://search.cpan.org/dist/Finance-StockAccount/lib/Finance/StockAccou
-    nt.pm
+    http://search.cpan.org/perldoc?Finance%3A%3AStockAccount
 
     It can also be found, followed, commented on, and contributed to on
     GitHub:
