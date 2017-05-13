@@ -8,7 +8,7 @@ use parent 'Finance::StockAccount::Import';
 #### Expected Fields, tab separated:
 # Symbol, Description, Action, Quantity, Price, Commission, Reg Fees, Date, TransactionID, Order Number, Transaction Type ID, Total Cost 
 # 0       1            2       3         4      5           6         7     8              9             10                   11
-my @pattern = qw(symbol 0 action 2 quantity 3 price 4 commission 5 regulatoryFees 6 date 7 totalCost 11);
+my @pattern = qw(symbol 0 description 1 action 2 quantity 3 price 4 commission 5 regulatoryFees 6 date 7 totalCost 11);
 my $numFields = 12;
 
 sub new {
@@ -66,9 +66,9 @@ sub nextAt {
     if (my $line = <$fh>) {
         chomp($line);
         my @row = split(',', $line);
-
         my $hash = {};
         my $action;
+        my $stockMerger = 0;
         for (my $x=0; $x<scalar(@$pattern)-1; $x+=2) {
             my $index = $pattern->[$x+1];
             if (exists($row[$index])) {
@@ -82,10 +82,18 @@ sub nextAt {
                 elsif ($key eq 'totalCost') {
                     next();
                 }
+                elsif ($key eq 'description') {
+                    if ($row[$index] =~ /STOCK MERGER/) {
+                        $stockMerger = 1;
+                    }
+                }
                 else {
                     my $value = $row[$index];
                     if ($key =~ /^(?:price|quantity|commission|regulatoryFees)$/) {
                         $value += 0;
+                        if ($stockMerger && $key eq 'price') {
+                            $value += 0.0000000001;
+                        }
                     }
                     $hash->{$key} = $row[$index];
                 }

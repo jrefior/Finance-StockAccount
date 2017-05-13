@@ -260,6 +260,14 @@ sub dateLimitPortion {
     }
 }
 
+sub priorPurchases {
+    my ($self, $index) = @_;
+    my $accountTransactions = $self->{accountTransactions};
+    my $actionString = $accountTransactions->[$index]->actionString();
+    my @priorPurchases = sort { $self->cmpPrice($a, $b) } grep { $_->possiblePurchase($actionString) } @{$accountTransactions}[0 .. $index];
+    return \@priorPurchases;
+}
+
 sub accountPriorPurchase {
     my ($self, $index) = @_;
     if (!$self->{dateSort}) {
@@ -267,14 +275,13 @@ sub accountPriorPurchase {
     }
     my $accountTransactions = $self->{accountTransactions};
     my $divestment = $accountTransactions->[$index];
-    my $actionString = $divestment->actionString();
     my $realization = Finance::StockAccount::Realization->new({
         stock           => $divestment->stock(),
         divestment      => $divestment,
     });
     
-    my @priorPurchases = sort { $self->cmpPrice($a, $b) } grep { $_->possiblePurchase($actionString) } @{$accountTransactions}[0 .. $index];
-    foreach my $priorPurchase (@priorPurchases) {
+    my $priorPurchases = $self->priorPurchases($index);
+    foreach my $priorPurchase (@$priorPurchases) {
         my $sharesDivested = $divestment->available();
         last unless $sharesDivested;
         my $accounted = $priorPurchase->accountShares($sharesDivested);
