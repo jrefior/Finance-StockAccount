@@ -296,24 +296,39 @@ sub staleSets {
     return $stale;
 }
 
-sub calculateMaxCashInvested {
+### The steps for finding maxCashInvested and minCashRequired are almost the same,
+### so combine into one process.
+sub calculateMinMaxCash {
     my ($self, $realizations) = @_;
     my @allTransactions = sort { $a->tm() <=> $b->tm() } map { @{$_->acquisitions()}, $_->divestment() } @$realizations;
     my $numberOfTrades = scalar(@allTransactions);
     @$realizations = ();
-    my ($total, $max) = (0, 0);
+    my ($total, $max, $invested, $cashOnHand) = (0, 0, 0, 0);
     for (my $x=0; $x<scalar(@allTransactions); $x++) {
+        # max invested
         my $transaction = $allTransactions[$x];
         $total += 0 - $transaction->cashEffect();
         $total > $max and $max = $total;
+        # min required
+        my $ce = abs($transaction->cashEffect());
+        if (ref($transaction) eq 'Finance::StockAccount::Acquisition') {
+            if ($ce > $cashOnHand) {
+                $invested += $ce - $cashOnHand;
+                $cashOnHand = 0;
+            }
+            else {
+                $cashOnHand -= $ce;
+            }
+        }
+        else {
+            $cashOnHand += $ce;
+        }
     }
-    @allTransactions = ();
-    if (wantarray()) {
-        return $max, $numberOfTrades;
-    }
-    else {
-        return $max;
-    }
+    return {
+        minCashRequired     => $invested,
+        maxCashInvested     => $max,
+        numberOfTrades      => $numberOfTrades,
+    };
 }
 
 sub calculateStats {
@@ -393,10 +408,11 @@ sub calculateStats {
             my $annualRatio                     = $secondsInYear / $secondsInAccount;
             $stats->{annualRatio}               = $annualRatio;
             $stats->{profitOverYears}           = $profit * $annualRatio;
-            my $maxCashInvested = $self->calculateMaxCashInvested(\@allRealizations);
-            $stats->{maxCashInvested}           = $maxCashInvested;
+            my $minMax = $self->calculateMinMaxCash(\@allRealizations);
+            $stats->{maxCashInvested}           = $minMax->{maxCashInvested};
+            $stats->{minCashRequired}           = $minMax->{minCashRequired};
             $stats->{profitOverOutlays}         = $profit / $totalOutlays;
-            my $pomci                           = $profit / $maxCashInvested;
+            my $pomci                           = $profit / $minMax->{maxCashInvested};
             $stats->{profitOverMaxCashInvested} = $pomci;
             $stats->{pomciOverYears}            = $pomci * $annualRatio;
             $stats->{numberOfTrades}            = $transactionCount;
@@ -488,14 +504,15 @@ sub statsForPeriod {
         $unfilteredSet->clearDateLimit();
     }
     if ($setCount > 0 and $totalOutlays) {
-        my $maxCashInvested = $self->calculateMaxCashInvested(\@allRealizations);
+        my $minMax = $self->calculateMinMaxCash(\@allRealizations);
         return {
             totalOutlays                => $totalOutlays,
             totalRevenues               => $totalRevenues,
-            maxCashInvested             => $maxCashInvested,
+            maxCashInvested             => $minMax->{maxCashInvested},
+            minCashRequired             => $minMax->{minCashRequired},
             profit                      => $profit,
             profitOverOutlays           => $profit / $totalOutlays,
-            profitOverMaxCashInvested   => $profit / $maxCashInvested,
+            profitOverMaxCashInvested   => $profit / $minMax->{maxCashInvested},
             commissions                 => $commissions,
             regulatoryFees              => $regulatoryFees,
             otherFees                   => $otherFees,
@@ -667,6 +684,9 @@ sub periodicStatsString {
             my $key = $statsKeys->[$x];
             my $value = $period->{$key};
             if ($verbose) {
+                if (!$value) {
+                    printf("Error\nValue: %10s _ Key: %10s\n", $value, $key);
+                }
                 $totals->[$x] += $value;
             }
             push(@row, $value);
@@ -1061,7 +1081,8 @@ and fees.
 
 =head4 Revenue
 
-How much cash was received in a divestment, after commissions and fees have been subtracted.
+How much cash was received in a divestment, after commissions and fees have been
+subtracted.
 
 =head4 maxCashInvested
 
@@ -1074,12 +1095,10 @@ of stock) at any one time.
 
 =head4 minCashRequired
 
-This is very similar to maxCashInvested, except it excludes any unrealized
-transactions from its calculation.  It essentially tells you how much
-investment was needed to make your current profit, and ignores transactions
-that you have not yet realized into profit or loss.  Its long name would be
-"Minimum cash investment required to reach current profit."
-
+This essentially tells you how much investment was needed to make your current
+profit, and ignores transactions that you have not yet realized into profit or
+loss.  Its long name would be "Minimum cash investment required to reach current
+profit."
 
 =head2 Statistics, or "Why does that number look wrong?"
 

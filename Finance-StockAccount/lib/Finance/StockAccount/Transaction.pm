@@ -98,7 +98,7 @@ sub action {
             return $self->cover(1);
         }
         else {
-            die "Action must a string, one of 'buy', 'sell', 'short', 'cover'.\n";
+            die "Action must be a string, one of 'buy', 'sell', 'short', 'cover'.\n";
         }
     }
     else {
