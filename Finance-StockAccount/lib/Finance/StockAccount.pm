@@ -750,6 +750,12 @@ sub maxCashInvested {
     return $self->{stats}{maxCashInvested};
 }
 
+sub minCashRequired {
+    my $self = shift;
+    $self->getStats();
+    return $self->{stats}{minCashRequired};
+}
+
 sub profitOverOutlays {
     my $self = shift;
     $self->getStats();
