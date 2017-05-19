@@ -13,7 +13,6 @@ use Finance::StockAccount::AccountTransaction;
 use Finance::StockAccount::Stock;
 
 
-
 ### Class definition
 sub new {
     my ($class, $options) = @_;
@@ -38,6 +37,7 @@ sub getNewStatsHash {
         maxCashInvested             => 0,
         minCashRequired             => 0,
         totalOutlays                => 0,
+        totalCostBasis              => 0,
         totalRevenues               => 0,
         profit                      => 0,
         profitOverYears             => 0,
@@ -64,13 +64,13 @@ sub getNewStatsHash {
 
 ### For convenience text output
 my $statsKeyHeadings = [qw(
-    Outlays Revenues MaxInvested MinRequired Profit OverOut
+    CostBasis Revenues MaxInvested MinRequired Profit OverOut
     OverInvested Commiss RegFees OthFees     NumTrades
 )];
 my $statsKeyHeadingsPattern = "%12s %12s %12s %12s %12s %7s %12s %9s %7s %7s %9s";
 
 my $statsKeys = [qw(
-    totalOutlays              totalRevenues maxCashInvested minCashRequired profit    profitOverOutlays
+    totalCostBasis              totalRevenues maxCashInvested minCashRequired profit    profitOverOutlays
     profitOverMaxCashInvested commissions   regulatoryFees  otherFees       numberOfTrades
 )];
 my $statsKeysPattern = "%12.2f %12.2f %12.2f %12.2f %12.2f %7.2f %12.2f %9.2f %7.2f %7.2f %9d";
@@ -80,11 +80,13 @@ my $statsLinesArray = [
         'Last Trade Date'                   => 'endDate'                    => '%35s',
         'Max Cash Invested at Once'         => 'maxCashInvested'            => '%35.2f',
         'Min Cash Required for Profit'      => 'minCashRequired'            => '%35.2f',
+        'Sum Cost Bases'                    => 'totalCostBasis'             => '%35.2f',
         'Sum Outlays'                       => 'totalOutlays'               => '%35.2f',
         'Sum Revenues'                      => 'totalRevenues'              => '%35.2f',
         'Total Profit'                      => 'profit'                     => '%35.2f',
         'Profit Over Years'                 => 'profitOverYears'            => '%35.2f',
         'Profit Over Sum Outlays'           => 'profitOverOutlays'          => '%35.2f',
+        'Profit Over Cost Bases'            => 'profitOverCostBasis'        => '%35.2f',
         'Profit Over Max Cash Invested'     => 'profitOverMaxCashInvested'  => '%35.2f',
         'Profit Over Max Cash Per Year'     => 'pomciOverYears'             => '%35.2f',
         'Profit Over Min Cash Required'     => 'profitOverMinCashRequired'  => '%35.2f',
@@ -145,26 +147,26 @@ sub getSet {
     }
 }
 
-sub getSetFiltered {
+sub getSetExceptSkips {
     my ($self, $hashKey) = @_;
     if ($self->{skipStocks}{$hashKey}) {
         return undef;
     }
-    elsif (exists($self->{sets}{$hashKey})) {
-        my $set = $self->{sets}{$hashKey};
+    return $self->getSet($hashKey);
+}
+
+sub getSetFiltered {
+    my ($self, $hashKey) = @_;
+    my $set = $self->getSetExceptSkips($hashKey);
+    if ($set) {
         if ($set->stale()) {
             $set->accountSales();
         }
         if ($set->realizationCount() > 0) {
             return $set;
         }
-        else {
-            return undef;
-        }
     }
-    else {
-        return undef;
-    }
+    return undef;
 }
 
 sub getFilteredSets {
@@ -296,20 +298,16 @@ sub staleSets {
     return $stale;
 }
 
-### The steps for finding maxCashInvested and minCashRequired are almost the same,
-### so combine into one process.
-sub calculateMinMaxCash {
+### The steps for calculating min cash required and max cash invested are similar.  The big difference
+### between the two stats is that minCashRequired only considers realized transactions, while
+### maxCashInvested considers all transactions.
+sub calculateMinCashRequired {
     my ($self, $realizations) = @_;
-    my @allTransactions = sort { $a->tm() <=> $b->tm() } map { @{$_->acquisitions()}, $_->divestment() } @$realizations;
-    my $numberOfTrades = scalar(@allTransactions);
+    my @realizedTransactions = sort { $a->tm() <=> $b->tm() } map { @{$_->acquisitions()}, $_->divestment() } @$realizations;
     @$realizations = ();
-    my ($total, $max, $invested, $cashOnHand) = (0, 0, 0, 0);
-    for (my $x=0; $x<scalar(@allTransactions); $x++) {
-        # max invested
-        my $transaction = $allTransactions[$x];
-        $total += 0 - $transaction->cashEffect();
-        $total > $max and $max = $total;
-        # min required
+    my ($invested, $cashOnHand) = (0, 0, 0, 0);
+    for (my $x=0; $x<scalar(@realizedTransactions); $x++) {
+        my $transaction = $realizedTransactions[$x];
         my $ce = abs($transaction->cashEffect());
         if (ref($transaction) eq 'Finance::StockAccount::Acquisition') {
             if ($ce > $cashOnHand) {
@@ -324,16 +322,34 @@ sub calculateMinMaxCash {
             $cashOnHand += $ce;
         }
     }
-    return {
-        minCashRequired     => $invested,
-        maxCashInvested     => $max,
-        numberOfTrades      => $numberOfTrades,
-    };
+    return $invested;
+}
+
+sub calculateMaxCashInvested {
+    my ($self, $dateHash) = @_;
+    # Build one big array of all transactions for all sets, then sort by date
+    my @sets = values %{$self->{sets}};
+    my @sortedTransactions = sort { $a->tm() <=> $b->tm() } map { @{$_->transactions()} } values %{$self->{sets}};
+    my ($total, $max) = (0, 0);
+    for (my $x=0; $x<scalar(@sortedTransactions); $x++) {
+        my $transaction = $sortedTransactions[$x];
+        if ($dateHash) {
+            if ($transaction->tm() < $dateHash->{start}) {
+                next;
+            }
+            if ($transaction->tm() > $dateHash->{end}) {
+                last;
+            }
+        }
+        $total += 0 - $transaction->cashEffect();
+        $total > $max and $max = $total;
+    }
+    return $max;
 }
 
 sub calculateStats {
     my $self = shift;
-    my ($totalOutlays, $totalRevenues, $profit, $commissions, $regulatoryFees, $otherFees, $numberExcluded, $transactionCount) = (0, 0, 0, 0, 0, 0, 0, 0);
+    my ($totalOutlays, $totalCostBasis, $totalRevenues, $profit, $commissions, $regulatoryFees, $otherFees, $numberExcluded, $transactionCount) = (0, 0, 0, 0, 0, 0, 0, 0, 0);
     my ($startDate, $endDate);
     my $setCount = 0;
     my @allRealizations = ();
@@ -341,6 +357,7 @@ sub calculateStats {
     $self->{stats} = $stats;
     $self->stale(0);
     foreach my $hashKey (keys %{$self->{sets}}) {
+        ### Filtered Stats
         my $set = $self->getSetFiltered($hashKey);
         if ($set) {
             if ($set->stale()) {
@@ -350,8 +367,8 @@ sub calculateStats {
             next unless $set->success();
 
             ### Simple Totals
-            $totalOutlays       += $set->totalOutlays();
             $totalRevenues      += $set->totalRevenues();
+            $totalCostBasis     += $set->totalCostBasis();
             $profit             += $set->profit();
             $commissions        += $set->commissions();
             $regulatoryFees     += $set->regulatoryFees();
@@ -385,46 +402,57 @@ sub calculateStats {
             if ($self->{skipStocks}{$hashKey}) {
                 $numberExcluded += $unfilteredSet->transactionCount();
             }
+            $set = $self->getSetExceptSkips($hashKey);
+        }
+        if ($set) {
+            $totalOutlays += $set->totalOutlays();
         }
     }
     $stats->{numberExcluded} = $numberExcluded;
-    if ($setCount > 0) {
-        if ($totalOutlays) {
-            my $profitOverOutlays = $profit / $totalOutlays;
-            $stats->{totalOutlays}      = $totalOutlays;
-            $stats->{totalRevenues}     = $totalRevenues;
-            $stats->{profit}            = $profit;
-            $stats->{commissions}       = $commissions;
-            $stats->{regulatoryFees}    = $regulatoryFees;
-            $stats->{otherFees}         = $otherFees;
-            $stats->{profitOverOutlays} = $profitOverOutlays;
-            $stats->{startDate}         = $startDate;
-            $stats->{endDate}           = $endDate;
+    if ($totalOutlays) {
+        my $profitOverOutlays = $profit / $totalOutlays;
+        $stats->{totalOutlays}      = $totalOutlays;
+        $stats->{totalCostBasis}    = $totalCostBasis;
+        $stats->{totalRevenues}     = $totalRevenues;
+        $stats->{profit}            = $profit;
+        $stats->{commissions}       = $commissions;
+        $stats->{regulatoryFees}    = $regulatoryFees;
+        $stats->{otherFees}         = $otherFees;
+        $stats->{profitOverOutlays} = $profitOverOutlays;
+        $stats->{startDate}         = $startDate;
+        $stats->{endDate}           = $endDate;
+        my $minCashRequired = $self->calculateMinCashRequired(\@allRealizations);
+        my $maxCashInvested = $self->calculateMaxCashInvested();
+        $stats->{maxCashInvested}           = $maxCashInvested;
+        $stats->{minCashRequired}           = $minCashRequired;
+        $stats->{profitOverOutlays}         = $profit / $totalOutlays;
+        my $pocb = 0;
+        if ($totalCostBasis) {
+            $pocb = $profit / $totalCostBasis;
+        }
+        $stats->{profitOverCostBasis}       = $pocb;
+        my $pomci                           = $profit / $maxCashInvested;
+        $stats->{profitOverMaxCashInvested} = $pomci;
+        my $pomcr = 0;
+        if ($minCashRequired) {
+            $pomcr = $profit / $minCashRequired;
+        }
+        $stats->{profitOverMinCashRequired} = $pomcr;
+        $stats->{numberOfTrades}            = $transactionCount;
+        if ($endDate && $startDate) {
             my $secondsInYear = 60 * 60 * 24 * 365.25;
             my $secondsInAccount = $endDate->epoch() - $startDate->epoch();
-            if (!$secondsInAccount) {
-                croak "No time passed in account? Can't calculate time-related stats.";
+            if ($secondsInAccount) {
+                my $annualRatio                     = $secondsInYear / $secondsInAccount;
+                $stats->{annualRatio}               = $annualRatio;
+                $stats->{profitOverYears}           = $profit * $annualRatio;
+                $stats->{pomciOverYears}            = $pomci * $annualRatio;
+                $stats->{pomcrOverYears}            = $pomcr * $annualRatio;
             }
-            my $annualRatio                     = $secondsInYear / $secondsInAccount;
-            $stats->{annualRatio}               = $annualRatio;
-            $stats->{profitOverYears}           = $profit * $annualRatio;
-            my $minMax = $self->calculateMinMaxCash(\@allRealizations);
-            $stats->{maxCashInvested}           = $minMax->{maxCashInvested};
-            $stats->{minCashRequired}           = $minMax->{minCashRequired};
-            $stats->{profitOverOutlays}         = $profit / $totalOutlays;
-            my $pomci                           = $profit / $minMax->{maxCashInvested};
-            $stats->{profitOverMaxCashInvested} = $pomci;
-            $stats->{pomciOverYears}            = $pomci * $annualRatio;
-            $stats->{numberOfTrades}            = $transactionCount;
-            return 1;
-        }
-        else {
-            carp "No totalOutlays found on which to compute stats.\n";
-            return 0;
         }
     }
     else {
-        carp "No realized gains in stock account.\n";
+        carp "No totalOutlays found on which to compute stats.\n";
         return 0;
     }
 }
@@ -483,7 +511,7 @@ sub availableAcquisitionsString {
 
 sub statsForPeriod {
     my ($self, $tm1, $tm2) = @_;
-    my ($totalOutlays, $totalRevenues, $profit, $commissions, $regulatoryFees, $otherFees, $transactionCount) = (0, 0, 0, 0, 0, 0, 0);
+    my ($totalOutlays, $totalCostBasis, $totalRevenues, $profit, $commissions, $regulatoryFees, $otherFees, $transactionCount) = (0, 0, 0, 0, 0, 0, 0, 0);
     my @allRealizations = ();
     my $setCount = 0;
     foreach my $hashKey (keys %{$self->{sets}}) {
@@ -493,6 +521,7 @@ sub statsForPeriod {
         if ($set) {
             $setCount++;
             $totalOutlays       += $set->totalOutlays();
+            $totalCostBasis     += $set->totalCostBasis();
             $totalRevenues      += $set->totalRevenues();
             $profit             += $set->profit();
             $commissions        += $set->commissions();
@@ -503,16 +532,27 @@ sub statsForPeriod {
         }
         $unfilteredSet->clearDateLimit();
     }
-    if ($setCount > 0 and $totalOutlays) {
-        my $minMax = $self->calculateMinMaxCash(\@allRealizations);
+    if ($totalOutlays) {
+        my $minCashRequired = $self->calculateMinCashRequired(\@allRealizations);
+        my $maxCashInvested = $self->calculateMaxCashInvested({ start => $tm1, end => $tm2 });
+        my $profitOverMax = 0;
+        if ($maxCashInvested) {
+            $profitOverMax = $profit / $maxCashInvested;
+        }
+        my $pocb = 0;
+        if ($totalCostBasis) {
+            $pocb = $profit / $totalCostBasis;
+        }
         return {
             totalOutlays                => $totalOutlays,
+            totalCostBasis              => $totalCostBasis,
             totalRevenues               => $totalRevenues,
-            maxCashInvested             => $minMax->{maxCashInvested},
-            minCashRequired             => $minMax->{minCashRequired},
+            maxCashInvested             => $maxCashInvested,
+            minCashRequired             => $minCashRequired,
             profit                      => $profit,
+            profitOverCostBasis         => $pocb,
             profitOverOutlays           => $profit / $totalOutlays,
-            profitOverMaxCashInvested   => $profit / $minMax->{maxCashInvested},
+            profitOverMaxCashInvested   => $profitOverMax,
             commissions                 => $commissions,
             regulatoryFees              => $regulatoryFees,
             otherFees                   => $otherFees,
@@ -683,10 +723,10 @@ sub periodicStatsString {
         for (my $x=0; $x<scalar(@$statsKeys); $x++) {
             my $key = $statsKeys->[$x];
             my $value = $period->{$key};
-            if ($verbose) {
-                if (!$value) {
-                    printf("Error\nValue: %10s _ Key: %10s\n", $value, $key);
-                }
+            # if ($verbose and !$value) {
+            #     printf("Error\nValue: %10s _ Key: %10s\n", $value, $key);
+            # }
+            if ($value) {
                 $totals->[$x] += $value;
             }
             push(@row, $value);
@@ -762,7 +802,19 @@ sub profitOverOutlays {
     return $self->{stats}{profitOverOutlays};
 }
 
+sub profitOverCostBasis {
+    my $self = shift;
+    $self->getStats();
+    return $self->{stats}{profitOverCostBasis};
+}
+
 sub profitOverMaxCashInvested {
+    my $self = shift;
+    $self->getStats();
+    return $self->{stats}{profitOverMaxCashInvested};
+}
+
+sub profitOverMinCashRequired {
     my $self = shift;
     $self->getStats();
     return $self->{stats}{profitOverMaxCashInvested};

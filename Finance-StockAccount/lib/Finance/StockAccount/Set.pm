@@ -35,6 +35,7 @@ sub getNewStatsHash {
         success                     => 0,
         profit                      => 0,
         totalOutlays                => 0,
+        totalCostBasis              => 0,
         totalRevenues               => 0,
         commissions                 => 0,
         regulatoryFees              => 0,
@@ -43,6 +44,11 @@ sub getNewStatsHash {
         endDate                     => undef,
         unrealizedTransactionCount  => 0,
     };
+}
+
+sub transactions {
+    my $self = shift;
+    return $self->{accountTransactions};
 }
 
 sub realizationCount {
@@ -299,8 +305,8 @@ sub accountPriorPurchase {
         $self->endDate($realization->endDate());
         my $stats = $self->{stats};
         $stats->{profit}            += $realization->realized();
-        $stats->{totalOutlays}      += $realization->costBasis();
         $stats->{totalRevenues}     += $realization->revenue();
+        $stats->{totalCostBasis}    += $realization->costBasis();
         $stats->{commissions}       += $realization->commissions();
         $stats->{regulatoryFees}    += $realization->regulatoryFees();
         $stats->{otherFees}         += $realization->otherFees();
@@ -328,6 +334,9 @@ sub accountSales {
             if ($at->available()) {
                 $status += $self->accountPriorPurchase($x);
             }
+        }
+        else {
+            $self->{stats}{totalOutlays} += abs($at->cashEffect());
         }
     }
     $self->stale(0);
@@ -391,6 +400,13 @@ sub profitOverOutlays {
     return $stats->{profit} / $stats->{totalOutlays};
 }
 
+sub profitOverCostBasis {
+    my $self = shift;
+    $self->checkStats();
+    my $stats = $self->{stats};
+    return $stats->{profit} / $stats->{totalCostBasis};
+}
+
 sub profit {
     my $self = shift;
     $self->checkStats();
@@ -401,6 +417,12 @@ sub totalOutlays {
     my $self = shift;
     $self->checkStats();
     return $self->{stats}{totalOutlays};
+}
+
+sub totalCostBasis {
+    my $self = shift;
+    $self->checkStats();
+    return $self->{stats}{totalCostBasis};
 }
 
 sub totalRevenues {

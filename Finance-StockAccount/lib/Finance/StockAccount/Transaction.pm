@@ -29,6 +29,7 @@ sub new {
         commission          => 0,
         regulatoryFees      => 0,
         otherFees           => 0,
+        verbose             => 0,
     };
     bless($self, $class);
     $init and $self->set($init);
@@ -230,7 +231,9 @@ sub cashEffect {
         return $cashEffect;
     }
     else {
-        warn "Cannot calculate cash effect.\n";
+        if ($self->{verbose}) {
+            warn "Cannot calculate cash effect.\n";
+        }
         return 0;
     }
 }

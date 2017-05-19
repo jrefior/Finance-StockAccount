@@ -49,6 +49,8 @@ use_ok('Finance::StockAccount');
     is($sa->profit(), 564, 'Got expected profit.');
     is($sa->maxCashInvested(), 4998, 'Got expected maximum cash invested at once.');
     ok($sa->profitOverOutlays() =~ /^0\.112/, 'Got expected return on investment.');
+    print $sa->profitOverCostBasis(), "\n";
+    ok($sa->profitOverCostBasis() =~ /^0\.112/, 'Got expected profit over cost basis.');
     ok($sa->profitOverMaxCashInvested() =~ /^0\.1128/, 'Got expected profit over max cash invested.');
     ok($sa->profitOverYears() =~ /^595\./, 'Got expected profit over years.');
     ok($sa->profitOverMaxCashInvestedOverYears() =~ /^0\.119/, 'Got expected mean annual profitOverOutlays.');

@@ -1,1 +1,2 @@
-prove -m synopsis.t transaction.t accounttransaction.t acquisition.t realization.t set.t sa.t optionsxpress.t allactivityregression.t
+prove -m synopsis.t transaction.t accounttransaction.t acquisition.t realization.t set.t sa.t optionsxpress.t \
+allactivityregression.t minmaxcashstats.t
