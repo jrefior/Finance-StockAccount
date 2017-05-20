@@ -328,9 +328,9 @@ $ms = $sa->monthlyStats();
 is($ms->[0]{maxCashInvested}, 1505, 'Got expected MCI for April.');
 is($ms->[1]{maxCashInvested}, 3620, 'Got expected MCI for May.');
 is($ms->[2]{maxCashInvested}, 5175, 'Got expected MCI for June.');
-is($ms->[3]{maxCashInvested}, 5175, 'Got expected MCI for July.');
-is($ms->[4]{maxCashInvested}, 5175, 'Got expected MCI for August.');
-is($ms->[5]{maxCashInvested}, 5175, 'Got expected MCI for September.');
+is($ms->[3]{maxCashInvested}, 4035, 'Got expected MCI for July.');
+is($ms->[4]{maxCashInvested}, 4035, 'Got expected MCI for August.');
+is($ms->[5]{maxCashInvested}, 2980, 'Got expected MCI for September.');
 
 
 done_testing();

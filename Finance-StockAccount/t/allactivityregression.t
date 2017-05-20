@@ -53,7 +53,8 @@ my $printRealizations = 1;
     my $sumProfit = $annualStats->[0]{profit} + $annualStats->[1]{profit} + $annualStats->[2]{profit};
     ok($sumProfit =~ /^9960\./, 'Got expected total profit for all three years.');
     ok(my $quarterlyStats = $sa->quarterlyStats(), 'Calculated quarterly stats.');
-    ok($quarterlyStats->[4]{maxCashInvested} =~ /^7258\./, 'Got expected maxCashInvested for the fifth quarterly stats calculation.');
+    # print $quarterlyStats->[4]{maxCashInvested}, "\n";
+    ok($quarterlyStats->[4]{maxCashInvested} =~ /^285\./, 'Got expected maxCashInvested for the fifth quarterly stats calculation.');
     ok(my $statsString = $sa->statsString(), 'Got stats string.');
     ok(my $realizationsString = $sa->realizationsString(), 'Got realizations string.');
 

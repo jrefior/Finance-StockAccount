@@ -336,9 +336,9 @@ sub calculateMaxCashInvested {
     for (my $x=0; $x<scalar(@sortedTransactions); $x++) {
         my $transaction = $sortedTransactions[$x];
         $total += 0 - $transaction->cashEffect();
+        push(@$mciSoFar, { date => $transaction->tm(), total => $total });
         if ($total > $max) {
             $max = $total;
-            push(@$mciSoFar, { date => $transaction->tm(), max => $max });
         }
     }
     $self->{mciSoFar} = $mciSoFar;
@@ -346,12 +346,22 @@ sub calculateMaxCashInvested {
 }
 
 sub findMaxCashInvested {
-    my ($self, $end) = @_;
+    my ($self, $start, $end) = @_;
     my $sofar = $self->{mciSoFar};
     my $max = 0;
     for (my $x=0; $x<scalar(@$sofar); $x++) {
-        last if $sofar->[$x]{date} > $end;
-        $max = $sofar->[$x]{max};
+        my $date = $sofar->[$x]{date};
+        last if $date > $end;
+        my $total = $sofar->[$x]{total};
+        if ($date < $start) {
+            if ($total > 0) {
+                $max = $total;
+            }
+            next;
+        }
+        if ($total > $max) {
+            $max = $total;
+        }
     }
     return $max;
 }
@@ -543,7 +553,7 @@ sub statsForPeriod {
     }
     if ($totalOutlays) {
         # find the max cash invested up to period end date
-        my $maxCashInvested = $self->findMaxCashInvested($tm2);
+        my $maxCashInvested = $self->findMaxCashInvested($tm1, $tm2);
         my $profitOverMax = 0;
         if ($maxCashInvested) {
             $profitOverMax = $profit / $maxCashInvested;
