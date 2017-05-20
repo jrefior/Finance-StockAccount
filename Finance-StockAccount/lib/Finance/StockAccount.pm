@@ -70,10 +70,10 @@ my $statsKeyHeadings = [qw(
 my $statsKeyHeadingsPattern = "%12s %12s %12s %12s %12s %7s %12s %9s %7s %7s %9s";
 
 my $statsKeys = [qw(
-    totalCostBasis              totalRevenues maxCashInvested minCashRequired profit    profitOverOutlays
+    totalCostBasis            totalRevenues maxCashInvested profit    profitOverOutlays
     profitOverMaxCashInvested commissions   regulatoryFees  otherFees       numberOfTrades
 )];
-my $statsKeysPattern = "%12.2f %12.2f %12.2f %12.2f %12.2f %7.2f %12.2f %9.2f %7.2f %7.2f %9d";
+my $statsKeysPattern = "%12.2f %12.2f %12.2f %12.2f %7.2f %12.2f %9.2f %7.2f %7.2f %9d";
 
 my $statsLinesArray = [
         'First Trade Date'                  => 'startDate'                  => '%35s',
@@ -326,23 +326,31 @@ sub calculateMinCashRequired {
 }
 
 sub calculateMaxCashInvested {
-    my ($self, $dateHash) = @_;
+    my $self = shift;
     # Build one big array of all transactions for all sets, then sort by date
     my @sets = values %{$self->{sets}};
     my @sortedTransactions = sort { $a->tm() <=> $b->tm() } map { @{$_->transactions()} } values %{$self->{sets}};
     my ($total, $max) = (0, 0);
+    my $mciSoFar = [];
     for (my $x=0; $x<scalar(@sortedTransactions); $x++) {
         my $transaction = $sortedTransactions[$x];
-        if ($dateHash) {
-            if ($transaction->tm() < $dateHash->{start}) {
-                next;
-            }
-            if ($transaction->tm() > $dateHash->{end}) {
-                last;
-            }
-        }
         $total += 0 - $transaction->cashEffect();
-        $total > $max and $max = $total;
+        if ($total > $max) {
+            $max = $total;
+            push(@$mciSoFar, { date => $transaction->tm(), max => $max });
+        }
+    }
+    $self->{mciSoFar} = $mciSoFar;
+    return $max;
+}
+
+sub findMaxCashInvested {
+    my ($self, $end) = @_;
+    my $sofar = $self->{mciSoFar};
+    my $max = 0;
+    for (my $x=0; $x<scalar(@$sofar); $x++) {
+        last if $sofar->[$x]{date} > $end;
+        $max = $sofar->[$x]{max};
     }
     return $max;
 }
@@ -533,8 +541,8 @@ sub statsForPeriod {
         $unfilteredSet->clearDateLimit();
     }
     if ($totalOutlays) {
-        my $minCashRequired = $self->calculateMinCashRequired(\@allRealizations);
-        my $maxCashInvested = $self->calculateMaxCashInvested({ start => $tm1, end => $tm2 });
+        # find the max cash invested up to period end date
+        my $maxCashInvested = $self->findMaxCashInvested($tm2);
         my $profitOverMax = 0;
         if ($maxCashInvested) {
             $profitOverMax = $profit / $maxCashInvested;
@@ -548,7 +556,6 @@ sub statsForPeriod {
             totalCostBasis              => $totalCostBasis,
             totalRevenues               => $totalRevenues,
             maxCashInvested             => $maxCashInvested,
-            minCashRequired             => $minCashRequired,
             profit                      => $profit,
             profitOverCostBasis         => $pocb,
             profitOverOutlays           => $profit / $totalOutlays,
@@ -1151,12 +1158,15 @@ value reached will be recorded in this stats field and returned by this method.
 It essentially means the most cash you had invested in stock (including shorts
 of stock) at any one time.
 
+In periodic stats, it shows the largest amount invested in stocks at once
+between the start of the account and the end of the period.
+
 =head4 minCashRequired
 
 This essentially tells you how much investment was needed to make your current
 profit, and ignores transactions that you have not yet realized into profit or
 loss.  Its long name would be "Minimum cash investment required to reach current
-profit."
+profit."  Not available in periodic stats.
 
 =head2 Statistics, or "Why does that number look wrong?"
 
@@ -1399,7 +1409,8 @@ Same as commissions above.
 =head2 maxCashInvested
 
 Returns the maximum cash value invested in stocks at once.  Uses transaction
-dates and outlays to find this value.
+dates and cost bases to find this value.  For periodic stats, shows the biggest max
+found so far between the start of the account and the end of the period.
 
     my $maxCashInvested = $sa->maxCashInvested();
 

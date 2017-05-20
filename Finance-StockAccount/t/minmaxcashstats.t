@@ -218,6 +218,19 @@ $sa = Finance::StockAccount->new();
 ### Left with 5 shares AAA
 ### End of data
 
+### Calculate max cash invested
+#ci +1505 April: 1505
+#ci +2005
+#ci - 795
+#ci + 905 May: 3620
+#ci +1555
+#ci -2195
+#ci +1055 June: 5175
+#ci -1055
+#ci - 920
+#ci -1565
+
+
 # ci = cash invested
 #ci +1505
 $sa->stockTransaction({
@@ -237,7 +250,7 @@ $sa->stockTransaction({
     price           => 100,
     commission      => 5,
 });
-#ci -805
+#ci -795
 $sa->stockTransaction({
     symbol          => 'AAA',
     dateString      => '20170502T150500Z',
@@ -264,7 +277,7 @@ $sa->stockTransaction({
     price           => 155,
     commission      => 5,
 });
-#ci -2205
+#ci -2195
 $sa->stockTransaction({
     symbol          => 'BBB',
     dateString      => '20170602T150500Z',
@@ -282,7 +295,7 @@ $sa->stockTransaction({
     price           => 105,
     commission      => 5,
 });
-#ci
+#ci -1055
 $sa->stockTransaction({
     symbol          => 'BBB',
     dateString      => '20170801T150500Z',
@@ -291,6 +304,7 @@ $sa->stockTransaction({
     price           => 106,
     commission      => 5,
 });
+#ci -920
 $sa->stockTransaction({
     symbol          => 'CCC',
     dateString      => '20170901T150500Z',
@@ -299,6 +313,7 @@ $sa->stockTransaction({
     price           => 18.50,
     commission      => 5,
 });
+#ci -1565
 $sa->stockTransaction({
     symbol          => 'AAA',
     dateString      => '20170902T150500Z',
@@ -308,9 +323,14 @@ $sa->stockTransaction({
     commission      => 5,
 });
 
-### Calculate max cash invested
-
-
+is($sa->maxCashInvested(), 5175, 'Got expected MCI for more sophisticated test case.');
+$ms = $sa->monthlyStats();
+is($ms->[0]{maxCashInvested}, 1505, 'Got expected MCI for April.');
+is($ms->[1]{maxCashInvested}, 3620, 'Got expected MCI for May.');
+is($ms->[2]{maxCashInvested}, 5175, 'Got expected MCI for June.');
+is($ms->[3]{maxCashInvested}, 5175, 'Got expected MCI for July.');
+is($ms->[4]{maxCashInvested}, 5175, 'Got expected MCI for August.');
+is($ms->[5]{maxCashInvested}, 5175, 'Got expected MCI for September.');
 
 
 done_testing();
