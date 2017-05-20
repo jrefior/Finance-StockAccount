@@ -41,6 +41,7 @@ sub getNewStatsHash {
         totalRevenues               => 0,
         profit                      => 0,
         profitOverYears             => 0,
+        profitOverCostBasis         => 0,
         profitOverOutlays           => 0,
         profitOverMaxCashInvested   => 0,
         pomciOverYears              => 0,
@@ -64,16 +65,16 @@ sub getNewStatsHash {
 
 ### For convenience text output
 my $statsKeyHeadings = [qw(
-    CostBasis Revenues MaxInvested Profit OverOut
-    OverInvested Commiss RegFees OthFees  NumTrades
+    CostBasis Revenues MaxInvested Profit
+    OverCostBasis Commiss RegFees OthFees  NumTrades
 )];
-my $statsKeyHeadingsPattern = "%12s %12s %12s %12s %7s %12s %9s %7s %7s %9s";
+my $statsKeyHeadingsPattern = "%12s %12s %12s %12s %12s %9s %7s %7s %9s";
 
 my $statsKeys = [qw(
-    totalCostBasis            totalRevenues maxCashInvested profit    profitOverOutlays
-    profitOverMaxCashInvested commissions   regulatoryFees  otherFees       numberOfTrades
+    totalCostBasis      totalRevenues maxCashInvested profit
+    profitOverCostBasis commissions   regulatoryFees  otherFees numberOfTrades
 )];
-my $statsKeysPattern = "%12.2f %12.2f %12.2f %12.2f %7.2f %12.2f %9.2f %7.2f %7.2f %9d";
+my $statsKeysPattern = "%12.2f %12.2f %12.2f %12.2f %12.2f %9.2f %7.2f %7.2f %9d";
 
 my $statsLinesArray = [
         'First Trade Date'                  => 'startDate'                  => '%35s',
