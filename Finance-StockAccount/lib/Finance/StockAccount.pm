@@ -64,10 +64,10 @@ sub getNewStatsHash {
 
 ### For convenience text output
 my $statsKeyHeadings = [qw(
-    CostBasis Revenues MaxInvested MinRequired Profit OverOut
-    OverInvested Commiss RegFees OthFees     NumTrades
+    CostBasis Revenues MaxInvested Profit OverOut
+    OverInvested Commiss RegFees OthFees  NumTrades
 )];
-my $statsKeyHeadingsPattern = "%12s %12s %12s %12s %12s %7s %12s %9s %7s %7s %9s";
+my $statsKeyHeadingsPattern = "%12s %12s %12s %12s %7s %12s %9s %7s %7s %9s";
 
 my $statsKeys = [qw(
     totalCostBasis            totalRevenues maxCashInvested profit    profitOverOutlays
