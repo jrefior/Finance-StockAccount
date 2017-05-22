@@ -519,11 +519,18 @@ sub availableAcquisitionsString {
     else {
         @hashKeys = keys %{$self->{sets}};
     }
-    foreach my $hashKey (@hashKeys) {
+    my @acquisitionStrings;
+    foreach my $hashKey (sort @hashKeys) {
         my $set = $self->getSet($hashKey);
         if ($set) {
-            $string .= $set->availableAcquisitionsString();
+            my $aqString = $set->availableAcquisitionsString();
+            if ($aqString) {
+                push(@acquisitionStrings, $aqString);
+            }
         }
+    }
+    if (scalar(@acquisitionStrings)) {
+        $string = join(Finance::StockAccount::Transaction->lineFormatBreak(), @acquisitionStrings);
     }
     return $string;
 }

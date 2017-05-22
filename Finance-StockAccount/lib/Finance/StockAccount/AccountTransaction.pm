@@ -7,6 +7,13 @@ use parent 'Finance::StockAccount::Transaction';
 use strict;
 use warnings;
 
+use constant {
+    LF_QUANTITY     => 3,
+    LF_PRICE        => 4,
+    LF_COMMISSION   => 5,
+    LF_FEES         => 6,
+    LF_CASHEFFECT   => 7
+};
 
 sub new {
     my ($class, $init) = @_;
@@ -79,14 +86,22 @@ sub hashKey {
 
 sub lineFormatValues {
     my ($self, $available) = @_;
-    my $lineFormatValues = $self->SUPER::lineFormatValues();
-    $lineFormatValues->[3] = $available ? $self->available : $self->{accounted};
-    return $lineFormatValues;
+    my $lfv = $self->SUPER::lineFormatValues();
+    my $shares = $available ? $self->available : $self->{accounted};
+    my $portion = $shares / $self->{quantity};
+    $lfv->[LF_QUANTITY] = $shares;
+    $lfv->[LF_COMMISSION] *= $portion;
+    $lfv->[LF_FEES] *= $portion;
+    $lfv->[LF_CASHEFFECT] = $lfv->[LF_PRICE] * $shares + $lfv->[LF_COMMISSION] + $lfv->[LF_FEES];
+    return $lfv;
 }
 
 sub lineFormatString {
-    my ($self, $available) = @_;
-    return sprintf(Finance::StockAccount::Transaction->lineFormatPattern(), @{$self->lineFormatValues($available)});
+    my ($self, $available, $lfv) = @_;
+    if (!$lfv) {
+        $lfv = $self->lineFormatValues($available);
+    }
+    return sprintf(Finance::StockAccount::Transaction->lineFormatPattern(), @{$lfv});
 }
 
 

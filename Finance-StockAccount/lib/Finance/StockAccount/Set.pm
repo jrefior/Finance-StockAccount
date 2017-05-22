@@ -9,6 +9,7 @@ use Time::Moment;
 use Carp;
 
 use Finance::StockAccount::Realization;
+# use Finance::StockAccount::AccountTransaction;
 
 
 sub new {
@@ -98,16 +99,33 @@ sub availableAcquisitions {
 sub availableAcquisitionsString {
     my $self = shift;
     my $aa   = $self->availableAcquisitions();
-    my $string;
-    my $header = Finance::StockAccount::Transaction->lineFormatHeader();
+    my $string = '';
+    my $header          = Finance::StockAccount::Transaction->lineFormatHeader();
+    my $lineBreak       = Finance::StockAccount::Transaction->lineFormatBreak();
+    my $quantIndex      = Finance::StockAccount::AccountTransaction::LF_QUANTITY;
+    my $priceIndex      = Finance::StockAccount::AccountTransaction::LF_PRICE;
+    my $cashEffectIndex = Finance::StockAccount::AccountTransaction::LF_CASHEFFECT;
+    my $aqValues;
     foreach my $at (@$aa) {
-        $string .= $at->lineFormatString(1);
+        my $lfv = $at->lineFormatValues(1);
+        my $shares = $lfv->[$quantIndex];
+        $aqValues->{shares} += $shares;
+        $aqValues->{heavyPrice} += $lfv->[$priceIndex] * $shares;
+        $aqValues->{cashEffect} += $lfv->[$cashEffectIndex];
+        $string .= $at->lineFormatString(1, $lfv);
     }
     if ($string) {
         $string = $header . $string;
     }
-    else {
-        $string = '';
+    if (scalar(@$aa) > 1) {
+        my $shares = $aqValues->{shares};
+        my @totalValues = (
+            'Current Holdings (price is weighted average)',
+            $shares,
+            $aqValues->{heavyPrice} / $shares,
+            $aqValues->{cashEffect},
+        );
+        $string .= $lineBreak . sprintf(Finance::StockAccount::Transaction::QUIET_LINE_PATTERN, @totalValues);
     }
     return $string;
 }

@@ -9,13 +9,17 @@ use Finance::StockAccount::Stock;
 use strict;
 use warnings;
 
-use constant BUY        => 0;
-use constant SELL       => 1;
-use constant SHORT      => 2;
-use constant COVER      => 3;
+use constant {
+    BUY         => 0,
+    SELL        => 1,
+    SHORT       => 2,
+    COVER       => 3,
+    LINE_LEN    => 94,
+    LINE_FORMAT_PATTERN     => "%-35s %-6s %-6s %8s %7.2f %10.2f %5.2f %10.2f\n",
+    HEADER_PATTERN          => "%-35s %-6s %-6s %8s %7s %10s %5s %10s\n",
+    QUIET_LINE_PATTERN      => "%-49s %8s %7.2f %27.2f\n",
+};
 
-my $lineFormatPattern = "%-35s %-6s %-6s %8s %7.2f %10.2f %5.2f %10.2f\n";
-my $headerPattern = "%-35s %-6s %-6s %8s %7s %10s %5s %10s\n";
 my @headerNames = qw(Date Symbol Action Quantity Price Commission Fees CashEffect);
 
 sub new {
@@ -396,11 +400,17 @@ sub string {
 }
 
 sub lineFormatHeader {
-    return sprintf($headerPattern, @headerNames);
+    return sprintf(HEADER_PATTERN, @headerNames);
 }
 
 sub lineFormatPattern {
-    return $lineFormatPattern;
+    return LINE_FORMAT_PATTERN;
+}
+
+sub lineFormatBreak {
+    my $double = shift;
+    my $char = $double ? '-' : '=';
+    return ($char x LINE_LEN) . "\n";
 }
 
 sub lineFormatValues {
@@ -413,7 +423,7 @@ sub lineFormatValues {
 
 sub lineFormatString {
     my $self = shift;
-    return sprintf($lineFormatPattern, @{$self->lineFormatValues()});
+    return sprintf(LINE_FORMAT_PATTERN, @{$self->lineFormatValues()});
 }
 
 
